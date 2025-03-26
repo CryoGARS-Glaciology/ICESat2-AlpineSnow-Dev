@@ -135,6 +135,12 @@ GradDecentFunc = @(A)reference_elevations(zmod(ix_off,:), norths(ix_off,:), east
 
 %% Grid of possible inputs to calculate initial guess
 A1 = -0.9:0.1:0.9;
+rmad_grid = zeros(length(A1),length(A1));
+
+k = 1;
+if k ~= 1
+    rmad_grid = readmatrix([abbrev,'_rmadFineGrid.csv']);
+end
 
 tic
 for i = 1:length(A1)

@@ -40,6 +40,8 @@ colors{2} = cmocean('-algae',5);
 colors{3} = cmocean('ice',5);
 colors{4} = cmocean('-amp',5);
 
+site_colors = ["#3dd6ff";"#6494ff";"#973ed3";"#77007a"];
+site_shapes = ["o";"square";"diamond";"^"];
 
 for j = 1:length(site_names)
     %site abbreviation for file names
@@ -53,11 +55,10 @@ for j = 1:length(site_names)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %% Load data
     % IS2 data
-    filepath = strcat(folderpath, 'IS2_Data/', prod_abbrev, '/', abbrev, '_', prod_abbrev, '-ByTrack-Ashift.csv');
+    filepath = strcat(folderpath, 'IS2_Data/', prod_abbrev, '/', abbrev, '_', prod_abbrev, '-ByTrack-fineGS-Ashift.csv');
     Ashift_ByTrack = readtable(filepath);
 
-    Ashift_Agg = [1,2]; % placeholder, this shift is only for RCEW A6-40
-    %Ashift_Agg = [2,0]; % placeholder, this shift is only for MCS A6-40
+    Ashift_Agg = {[0.3,1.1];[0.7,-0.9];[0.8,-0.1];[0.3,-0.1]}; % agg shifts for {'RCEW';'Banner';'MCS';'DCEW'}
 
     a = table2array(Ashift_ByTrack(:,3));
     a = -1 * a;
@@ -68,21 +69,23 @@ for j = 1:length(site_names)
     %% Figures
     %% Scatter Plot
     figure(1);
-    subplot(2,2,j); cla; hold on
-    for i = 0:1
-        scatter(Ashift_ByTrack.Var2(Ashift_ByTrack.Var4 == i),Ashift_ByTrack.Var3(Ashift_ByTrack.Var4 == i),100,'filled', 'MarkerFaceAlpha', 0.5); 
-        %colormap([[0 0.4470 0.7410]; [0.8500 0.3250 0.0980]]);
-        %h = gscatter(Ashift_ByTrack.Var2, Ashift_ByTrack.Var3, Ashift_ByTrack.Var4,'br','d',10,'filled');
-    end
-    %scatter(Ashift_Agg(1),Ashift_Agg(2),400,'pentagram','filled','MarkerFaceColor',[0.9290 0.6940 0.1250],'MarkerEdgeColor','k');
-    set(gca, 'XAxisLocation', 'origin', 'YAxisLocation', 'origin','fontsize',16)
+    subplot(1,4,j); cla; hold on
+    % for i = 0:1 % plot scatter plot with accending & decensinding tracks seperated
+    %     scatter(Ashift_ByTrack.Var2(Ashift_ByTrack.Var4 == i),Ashift_ByTrack.Var3(Ashift_ByTrack.Var4 == i),100,'filled') %, 'MarkerFaceAlpha', 0.5); 
+    %     %colormap([[0 0.4470 0.7410]; [0.8500 0.3250 0.0980]]);
+    %     %h = gscatter(Ashift_ByTrack.Var2, Ashift_ByTrack.Var3, Ashift_ByTrack.Var4,'br','d',10,'filled');
+    % end
+    scatter(Ashift_ByTrack.Var2,Ashift_ByTrack.Var3,100,'filled','MarkerFaceColor',site_colors(j,:),'Marker',site_shapes(j)); %, 'MarkerFaceAlpha', 0.5); 
+    scatter(Ashift_Agg{j}(1),Ashift_Agg{j}(2),400,'pentagram','filled','MarkerFaceColor',[0.9290 0.6940 0.1250],'MarkerEdgeColor','k');
+    set(gca, 'XAxisLocation', 'origin', 'YAxisLocation', 'origin','fontsize',16,'DataAspectRatio',[1 1 1])
     xlabel('East shift (m)'); ylabel("North shift (m)")
-    legend('0','1')
+   if j == 1
+   legend('Individual Coregistration Shifts','Aggregate Coregistration Shift','Location','southoutside');
+   end
     axis([-10 10 -10 10])
     title(site_names{j});
     hold off
-    %colorbar
-    %legend('By Track Shifts','Aggregated Shift')
+    
 
     %'30-Jan-2019''26-Aug-2019''28-Aug-2019''29-Oct-2019''26-Jan-2020''23-Feb-2020''26-Feb-2020'
     %'28-Apr-2020''24-May-2020''26-Aug-2020''22-Nov-2020''21-Dec-2020''21-Feb-2021''23-Feb-2021''24-Aug-2021'

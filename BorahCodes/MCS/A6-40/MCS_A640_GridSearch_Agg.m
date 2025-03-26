@@ -172,10 +172,10 @@ toc
 
 %save the best coregistration shifts to file
 [row, col] = find(ismember(rmad_grid, min(rmad_grid(:))));
-writematrix([A1(col),A1(row)],[abbrev,'_',acronym,'-Agg-Ashift.csv']);
+writematrix([A1(row),A1(col)],[abbrev,'_',acronym,'-Agg-Ashift.csv']);
 
 % print old and new RMAD
-fprintf('x-offset = %5.2f m & y-offset = %5.2f m w/ RNMAD = %5.2f m \n',A1(col),A1(row),min(rmad_grid(:)));
+fprintf('x-offset = %5.2f m & y-offset = %5.2f m w/ RNMAD = %5.2f m \n',A1(row),A1(col),min(rmad_grid(:)));
 fprintf('Old RNMAD = %5.2f \n', rmad_grid(9,9));
 
 % Calculate corregistered reference elevations

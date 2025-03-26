@@ -8,11 +8,11 @@
 %%%     abbrev = site abriviation for file name
 %%%     acronym = ICESat-2 product acronym
 %%% OUTPUTS:
-%%%     Reference_Elevations = csv datatable reporting the non-weighted
+%%%     Reference_Elevations = Non-coregistered csv datatable reporting the non-weighted
 %%%         mean, std, weighted mean, and fitted refference elevations,
 %%%         mean slope, std slope, mean aspect, std aspect
 %%%         
-%%%
+%%%     
 %%% Last updated: March 2024 by Karina Zikan
 
 

@@ -10,7 +10,9 @@ site_abbrevs = string({'RCEW';'Banner';'MCS';'DCEW'});
 site_names = string({'RCEW';'BCS';'MCS';'DCEW'});
 
 %Turn dtm or is2 slope correction
-slope_correction = 2; % 0 = dtm, 1 = is2, 2 = no correction
+slope_correction = 1; % 0 = dtm, 1 = is2, 2 = no correction
+% ICESat-2 residuals below 0 to NaN?
+remove_negative = 0; % 0 = off, 1 = on
 
 slope_cutoff = 20;
 
@@ -54,7 +56,7 @@ for j = 1:length(site_abbrevs)
         snotel{j}.SNWD_I_1_in_(snotel{j}.SNWD_I_1_in_ < 0) = NaN;
     end
 
-    %%
+    % apply data corrections 
     if slope_correction == 1
         df_off{j}.elev_residuals_vertcoreg_dtm_slopecorrected = df_off{j}.elev_residuals_vertcoreg_is2_slopecorrected;
         df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected = df_on{j}.elev_residuals_vertcoreg_is2_slopecorrected;
@@ -68,11 +70,19 @@ for j = 1:length(site_abbrevs)
     else
         ('DTM Slope correction used')
     end
+    % remove negative ICESat-2 elevation residuals
+    if remove_negative == 1
+        df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected(df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected < 0) = NaN;
+        if  j == 1
+            ('Negative ICESat-2 snow depth removed')
+        end
+    end
 end
 
 %% Site stats
 for j = 1:length(site_abbrevs)
     med(j) = median(df_off{j}.elev_residuals_vertcoreg_dtm_slopecorrected,'omitnan');
+    med_SD(j) = median(df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected,'omitnan');
     nmad(j) = 1.4826*median(abs(df_off{j}.elev_residuals_vertcoreg_dtm_slopecorrected-nanmean(df_off{j}.elev_residuals_vertcoreg_dtm_slopecorrected)),'omitnan');
     %below slope cutoff
     ix = find(df_off{j}.IS2_slope_deg < slope_cutoff);
@@ -82,4 +92,12 @@ for j = 1:length(site_abbrevs)
     ix = find(df_off{j}.IS2_slope_deg > slope_cutoff);
     median_above(j) = median(df_off{j}.elev_residuals_vertcoreg_dtm_slopecorrected(ix),'omitnan');
     nmad_above(j) = 1.4826*median(abs(df_off{j}.elev_residuals_vertcoreg_dtm_slopecorrected(ix)-nanmean(df_off{j}.elev_residuals_vertcoreg_dtm_slopecorrected(ix))),'omitnan');   
+    %snow depth below half elevation
+    ix = find(df_on{j}.elevation_report_nw_mean < nanmean([df_off{j}.elevation_report_nw_mean; df_on{j}.elevation_report_nw_mean]));
+    median_Ebelow(j) = median(df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected(ix),'omitnan');
+    nmad_Ebelow(j) = 1.4826*median(abs(df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected(ix)-nanmean(df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected(ix))),'omitnan');   
+    %snow depth above half elevation
+    ix = find(df_on{j}.elevation_report_nw_mean > nanmean([df_off{j}.elevation_report_nw_mean; df_on{j}.elevation_report_nw_mean]));
+    median_Eabove(j) = median(df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected(ix),'omitnan');
+    nmad_Eabove(j) = 1.4826*median(abs(df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected(ix)-nanmean(df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected(ix))),'omitnan');   
 end

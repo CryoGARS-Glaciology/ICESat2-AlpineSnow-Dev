@@ -13,8 +13,9 @@
 %%%         mean slope, std slope, mean aspect, std aspect
 %%%
 %%%
-%%% Last updated: Sept 2024 by Karina Zikan & Ellyn Enderlin
+%%% Last updated: Jan 2025 by Karina Zikan & Ellyn Enderlin
 
+%% Inputs
 clearvars; close all;
 addpath('/bsuhome/karinazikan/scratch/')
 
@@ -30,7 +31,6 @@ DTM_slope = 'MCS_REFDEM_WGS84-slope.tif';
 DTM_aspect = 'MCS_REFDEM_WGS84-aspect.tif';
 
 %csv (be sure the path ends in a /)
-% csv_path = '/Users/alexiturriria/ICESat2-AlpineSnow/Sites/DCEW_2shape/IS2_Data/';
 csv_path = '/bsuhome/karinazikan/scratch/MCS/A6-40/';
 csv_name = 'MCS-ICESat2-A6-40-SnowCover.csv';
 
@@ -41,7 +41,7 @@ abbrev = 'MCS';
 acronym = 'A6-40'; %for custom ATL06 with ATL08 classification set to A6-20 for 20m, A6-40 for 40m, 'A6-30' for 30m
 
 %Set output name - MAKE SURE FILENAME SUFIX IS CORRECT!!!!!!!!!!!!!!!!!!!
-filename_sufix = '-ref-elevations-grid-search-ByTrack';
+filename_sufix = '-ref-elevations-grid-search-fineGS-ByTrack';
 
 %% Set output name
 outputname = [abbrev,'-ICESat2-',acronym, filename_sufix, '.csv'];
@@ -126,6 +126,13 @@ writetable(T,icesat2);
 clear unique_*;
 [unique_dates,~] = unique(dates);
 
+%read in corse grid searches 
+fprintf('loading existing files \n');
+%read in the offset
+Adata = readmatrix([abbrev,'_',acronym,'-ByTrack-Ashift.csv']);
+Arow_corse = Adata(:,2); Acol_corse = Adata(:,3); 
+clear Adata;
+
 %% Snow free data
 ix_off = find(T.snowcover == 0);
 zmod_off = zmod(ix_off,:);
@@ -146,10 +153,10 @@ for k = 1:length(unique_dates)
     fprintf('Track #%i : \n',k);
 
     %if starting not at 1, load the existing coregistration offset file
-    if k ~=1 && isfile([abbrev,'_',acronym,'-ByTrack-Ashift.csv'])
+    if k ~=1 && isfile([abbrev,'_',acronym,'-ByTrack-fineGS-Ashift.csv'])
         fprintf('loading existing files \n');
         %read in the offset
-        Adata = readmatrix([abbrev,'_',acronym,'-ByTrack-Ashift.csv']);
+        Adata = readmatrix([abbrev,'_',acronym,'-ByTrack-fineGS-Ashift.csv']);
         Adate = Adata(:,1); Arow = Adata(:,2); Acol = Adata(:,3); Adir = Adata(:,4);
         clear Adata;
         %read in the reference elevations
@@ -171,18 +178,17 @@ for k = 1:length(unique_dates)
             % create the grid search function
             GridSearchFunc = @(A)reference_elevations(zmod_off(ix,:), norths_off(ix,:), easts_off(ix,:), end_flag_off(ix), default_length, elevations, slope, aspect, Ref, A); %create the handle to call the coregistration function
 
-            %set up the grid size
-            A1 = -8:8;
-            %run the grid search
+            A1 = -0.9:0.1:0.9;
+
+               %run the grid search
             tic
             for i = 1:length(A1)
                 for j = 1:length(A1)
-                    rmad_grid(i,j) = GridSearchFunc([A1(i),A1(j)]);
+                    rmad_grid(i,j) = GridSearchFunc([Arow_corse(k)+A1(i),Acol_corse(k)+A1(j)]);
                 end
-                writematrix(rmad_grid,[abbrev,'_',acronym,'-',YYYYMMDD,'_rmadGrid.csv'])
+                writematrix(rmad_grid,[abbrev,'_',acronym,'-',YYYYMMDD,'-fineGS_rmadGrid.csv'])
             end
             toc
-            
 
             %determine the track orientation to determine if the offset differs for
             %ascending and descending passes
@@ -198,25 +204,24 @@ for k = 1:length(unique_dates)
 
             %save the best coregistration shifts to file
             [row, col] = find(ismember(rmad_grid, min(rmad_grid(:))));
-            Adate = [Adate; str2num(YYYYMMDD)]; Arow = [Arow; A1(row)]; Acol = [Acol; A1(col)];
+            Adate = [Adate; str2num(YYYYMMDD)]; Arow = [Arow; Arow_corse(k) + A1(row)]; Acol = [Acol; Acol_corse(k)+A1(col)];
             %assign a binary orientation flag for ascending vs descending tracks
             if sat_dir(k) > 0
                 Adir = [Adir; 1];
             else
                 Adir = [Adir; 0];
             end
-            writematrix([Adate,Arow,Acol,Adir],[abbrev,'_',acronym,'-ByTrack-Ashift.csv']);
+            writematrix([Adate,Arow,Acol,Adir],[abbrev,'_',acronym,'-ByTrack-fineGS-Ashift.csv']);
 
-            % Test Gradient Decent from grid guess
             tic
-            fprintf('x-offset = %5.2f m & y-offset = %5.2f m w/ RNMAD = %5.2f m \n',A1(col),A1(row),min(rmad_grid(:)));
-            fprintf('Old RNMAD = %5.2f \n', rmad_grid(6,6));
+            fprintf('x-offset = %5.2f m & y-offset = %5.2f m w/ RNMAD = %5.2f m \n', Arow_corse(k)+A1(row), Acol_corse(k)+A1(col),min(rmad_grid(:)));
+            fprintf('Old RNMAD = %5.2f \n', rmad_grid(10,10));
             clear ix;
             toc
 
             % Calculate corregistered reference elevations
             ix = find(dates == unique_dates(k));
-            [~,E] = reference_elevations(zmod(ix), norths(ix), easts(ix), end_flag(ix), default_length, elevations, slope, aspect, Ref, [A1(row),A1(col)]); %calculate ref elevations with the shift
+            [~,E] = reference_elevations(zmod(ix), norths(ix), easts(ix), end_flag(ix), default_length, elevations, slope, aspect, Ref, [Arow_corse(k)+A1(row), Acol_corse(k)+A1(col)]); %calculate ref elevations with the shift
             End_E = [End_E; E]; clear E ix;
 
             % save refelevation csv
@@ -245,7 +250,7 @@ for k = 1:length(unique_dates)
             else
                 Adir = [Adir; 0];
             end
-            writematrix([Adate,Arow,Acol,Adir],[abbrev,'_',acronym,'-ByTrack-Ashift.csv']);
+            writematrix([Adate,Arow,Acol,Adir],[abbrev,'_',acronym,'-ByTrack-fineGS-Ashift.csv']);
 
             % Calculate corregistered reference elevations
             ix = find(dates == unique_dates(k));
@@ -279,7 +284,7 @@ for k = 1:length(unique_dates)
         else
             Adir = [Adir; 0];
         end
-        writematrix([Adate,Arow,Acol,Adir],[abbrev,'_',acronym,'-ByTrack-Ashift.csv']);
+        writematrix([Adate,Arow,Acol,Adir],[abbrev,'_',acronym,'-ByTrack-fineGS-Ashift.csv']);
 
         % Calculate corregistered reference elevations
         ix = find(dates == unique_dates(k));

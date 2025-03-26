@@ -10,7 +10,7 @@
 %%% OUTPUTS:
 %%%     File = data file with all the data and calcualted residuals
 %%%
-%%% Last updated: Nov 2023 by Karina Zikan
+%%% Last updated: Feb 2025 by Karina Zikan
 
 %% Inputs
 clearvars;
@@ -21,12 +21,13 @@ folderpath = '/Users/karinazikan/Documents/ICESat2-AlpineSnow/Sites/';
 abbrev = 'RCEW';
 
 % Grouping type:
-% 'Agg' - 0
-% 'ByTrack' - 1
+% 'fineGS-agg' - 0
+% 'fineGS-ByTrack' - 1
 % 'noCoreg' - 2
 % 'Agg_acc' - 3
 % 'Agg_dec' - 4
-Grouping = 2;
+% 'gradDecent' - 5
+Grouping = 1;
 
 
 %set footprint length
@@ -34,16 +35,17 @@ Grouping = 2;
 
 %% File paths
 if Grouping == 0
-    Group = 'Agg'
+    Group = 'fineGS-agg'
 elseif Grouping == 1
-    Group = 'ByTrack'
+    Group = 'fineGS-ByTrack'
 elseif Grouping == 2
     Group = 'noCoreg'
 elseif Grouping == 3
     Group = 'Agg-acc'
 elseif Grouping == 4
     Group = 'Agg-dec'
-else
+elseif Grouping == 5
+    Group = 'gradDecent'
 end
 
 icesat2 = [folderpath abbrev '/IS2_Data/A6-40/' abbrev '-ICESat2-A6-40-SnowCover'];
@@ -64,7 +66,7 @@ I_dates = datetime(I.time.Year,I.time.Month,I.time.Day);
 
 if Grouping == 1
     %bytrack coreg table
-    ByTrack_shift_path = [folderpath abbrev '/IS2_Data/A6-40/' abbrev '_A6-40-ByTrack-Ashift'];
+    ByTrack_shift_path = [folderpath abbrev '/IS2_Data/A6-40/' abbrev '_A6-40-ByTrack-fineGS-Ashift'];
     ByTrack_shifts = readtable(ByTrack_shift_path);
     %filter by dates
     E_dates = datetime(ByTrack_shifts.Var1,'ConvertFrom','yyyymmdd');

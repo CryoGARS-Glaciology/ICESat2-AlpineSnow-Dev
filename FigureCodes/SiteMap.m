@@ -14,16 +14,18 @@
 clearvars;
 addpath(['/Users/karinazikan/Documents/ICESat2-AlpineSnow/functions'])
 addpath(['/Users/karinazikan/Documents/cmocean'])
+addpath(['/Users/karinazikan/Documents/Hillshade_esri/Hillshade_esri'])
+addpath(['/Users/karinazikan/Documents/nclCM/nclCM'])
 
 %Folder path
 folderpath = '/Users/karinazikan/Documents/ICESat2-AlpineSnow/Sites/';
 %site abbreviation for file names
-abbrev = 'MCS';
+abbrev = 'Banner';
 
 % DEM path
-DTM_name = [folderpath abbrev '/DEMs/MCS_REFDEM_WGS84.tif'];
+%DTM_name = [folderpath abbrev '/DEMs/MCS_REFDEM_WGS84.tif'];
 %DTM_name = [folderpath abbrev '/DEMs/RCEW_1m_WGS84UTM11_WGS84.tif'];
-%DTM_name = [folderpath abbrev '/DEMs/Banner_Bare_Earth_DEMs_mosaic_UTM11WGS84.tif'];
+DTM_name = [folderpath abbrev '/DEMs/Banner_Bare_Earth_DEMs_mosaic_UTM11WGS84.tif'];
 %DTM_name = [folderpath abbrev '/DEMs/DryCreekBase1m_WGS84UTM11_DEM.tif'];
 
 % % Veg_map
@@ -31,7 +33,7 @@ DTM_name = [folderpath abbrev '/DEMs/MCS_REFDEM_WGS84.tif'];
 
 %% Load data ({1} = ATL08, {2} = ATL06, {3} = ATL06 w/ ATL08 classification)
 %load the reference elevation data
-filepath = strcat(folderpath, abbrev, '/IS2_Data/A6-40/ATL06-A6-40-AllData-Agg');
+filepath = strcat(folderpath, abbrev, '/IS2_Data/A6-40/ATL06-A6-40-AllData-fineGS-agg');
 df = readtable(filepath);
 df.time = datetime(df.time.Year,df.time.Month,df.time.Day);
 df.Easting = df.Easting./(10^3);
@@ -83,6 +85,9 @@ DTM(DTM<1000) = NaN;
 
 %NDVI(DTM<0) = NaN;
 
+%hillshade
+hs=hillshade_esri(DTM,y,x);
+
 
 %% Track Plots
 date = '23-Feb-2020';
@@ -90,131 +95,93 @@ dates = datetime(df.time.Year,df.time.Month,df.time.Day);
 ix = find(dates == date);
 Track = df(ix,:);
 
+
 figure(1); clf
-imagesc(x,y,DTM); hold on
-daspect([1 1 1]); colormap([0 0 0; cmocean('grey')]); %('topo','pivot',min(min(DTM)))])
-scatter([df.Easting],[df.Northing],[],'green','.')
-%scatter([Track.Easting],[Track.Northing],[],'magenta','.')
+ax1 = axes;
+Elevim = imagesc(x,y,DTM);
+clim([1000 2900])
+colormap(ax1,[0 0 0; nclCM('MPL_terrain',200)]); daspect([1 1 1]); % nclCM('MPL_terrain',200) %cmocean('topo','pivot', 1000.1)
 xlabel('Easting [km]'); ylabel('Northing [km]');
 set(gca,'fontsize',20); set(gca,'Ydir','normal');
+xlim([min(x) max(x)]); ylim([min(y) max(y)]);
 c = colorbar;
-c.Label.String = 'Elevation (m)'; 
-
-%% Residual Map Plots
-cmap = cmocean('-balance'); 
-figure(2); clf
-subplot(1,2,1) 
-daspect([1 1 1]); colormap(cmap); 
-scatter(df_off,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
+c.Label.String = 'Elevation (m)'; clim([1000 2900])
+ax2 = axes;
+hold on
+HSim = imagesc(x,y,hs,'AlphaData',0.2); 
+colormap(ax2,[0 0 0; cmocean('grey')]); daspect([1 1 1]);
+scatter([df.Easting],[df.Northing],[],'MarkerEdgeColor',"white",'Marker','.')
 xlabel('Easting [km]'); ylabel('Northing [km]');
 set(gca,'fontsize',20); set(gca,'Ydir','normal');
-c = colorbar; 
-c.Label.String = 'Elevation residual (m)'; clim([-6 6])
-title('Snow Off')
+xlim([min(x) max(x)]); ylim([min(y) max(y)]);
+c2 = colorbar;
+c2.Label.String = 'Elevation (m)';
+hold off
+%%link axes
+linkaxes([ax1,ax2])
+%%Hide the top axes 
+ax2.Visible = 'off'; 
+ax2.XTick = []; 
+ax2.YTick = []; 
+set(c2,'visible','off')
 
-subplot(1,2,2)
-daspect([1 1 1]); colormap(cmap); 
-scatter(df_on,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
-xlabel('Easting [km]'); ylabel('Northing [km]');
-set(gca,'fontsize',20); set(gca,'Ydir','normal');
-c = colorbar;
-c.Label.String = 'Elevation residual (m)'; clim([-4 4])
-title('Snow On')
 
-%% Residual Map + NDVI Plots
-% 
-% % map = {'#FFFFFF', '#CE7E45', '#DF923D', '#F1B555', '#FCD163', '#99B718', '#74A901', '#66A000', '#529400', '#3E8601', '#207401', '#056201','#004C00', '#023B01', '#012E01', '#011D01', '#011301'};
-% % cmap = validatecolor(map, 'multiple');
-% 
-% figure(4);  clf
-% ax1 = axes;
-% axis equal
-% imagesc(x,y,NDVI); 
-% xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
-% set(gca,'fontsize',20); set(gca,'Ydir','normal');
-% xlabel('Easting [km]'); ylabel('Northing [km]');
-% c1 = colorbar;
-% axis equal
-% ax2 = axes;
-% axis equal
-% xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
+
+% %% Residual Map Plots
+% cmap = cmocean('-balance'); 
+% figure(2); clf
+% subplot(1,2,1) 
+% daspect([1 1 1]); colormap(cmap); 
 % scatter(df_off,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
 % xlabel('Easting [km]'); ylabel('Northing [km]');
 % set(gca,'fontsize',20); set(gca,'Ydir','normal');
-% c = colorbar;
-% c.Label.String = 'Elevation residual (m)'; clim([-4 4])
+% c = colorbar; 
+% c.Label.String = 'Elevation residual (m)'; clim([-6 6])
 % title('Snow Off')
-% colormap(ax1,cmocean('speed'))
-% colormap(ax2,cmocean('-balance'))
-% ax2.Visible = 'off';
-% ax2.XTick = [];
-% ax2.YTick = [];
-% set(c1,'visible','off')
-% axis equal
-% linkaxes([ax1 ax2],'xy')
 % 
-% figure(5); clf
-% ax1 = axes;
-% axis equal
-% imagesc(x,y,NDVI); 
-% xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
-% set(gca,'fontsize',20); set(gca,'Ydir','normal');
-% xlabel('Easting [km]'); ylabel('Northing [km]');
-% c1 = colorbar;
-% axis equal
-% ax2 = axes;
-% axis equal 
-% xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
+% subplot(1,2,2)
+% daspect([1 1 1]); colormap(cmap); 
 % scatter(df_on,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
 % xlabel('Easting [km]'); ylabel('Northing [km]');
 % set(gca,'fontsize',20); set(gca,'Ydir','normal');
 % c = colorbar;
 % c.Label.String = 'Elevation residual (m)'; clim([-4 4])
 % title('Snow On')
-% colormap(ax1,cmocean('speed'))
-% colormap(ax2,cmocean('-balance'))
-% ax2.Visible = 'off';
-% ax2.XTick = [];
-% ax2.YTick = [];
-% set(c1,'visible','off')
-% axis equal
-% linkaxes([ax1 ax2],'xy')
 
-
-%% Residuals gif
-cmap = cmocean('-balance'); 
-fig = figure(3); clf
-ax1 = axes; 
-imagesc(x,y,DTM); hold on
-%scatter([df.Easting],[df.Northing],[],'green','.');
-xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
-set(gca,'fontsize',20); set(gca,'Ydir','normal');
-xlabel('Easting [km]'); ylabel('Northing [km]');
-c1 = colorbar;
-ax2 = axes;
-for idx = 1:length(unique_dates)   
-    df_plot = df(df.time == unique_dates(idx), :);
-    scatter(df_plot,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
-    xlabel('Easting [km]'); ylabel('Northing [km]');
-    set(gca,'fontsize',20); set(gca,'Ydir','normal');
-    c2 = colorbar; c2.Label.String = 'Elevation residual (m)'; clim([-6 6])
-    xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
-    
-    ax1.Title.String = string(unique_dates(idx),'MMM-yyyy');
-
-    colormap(ax1,[0 0 0; cmocean('grey')])
-    colormap(ax2,cmap)
-    ax2.Visible = 'off';
-    ax2.XTick = [];
-    ax2.YTick = [];
-    set(c1,'visible','off')
-    
-
-    drawnow
-    frame = getframe(fig);
-    im{idx} = frame2im(frame);
-    clear df_plot
-end
+% %% Residuals gif
+% cmap = cmocean('-balance'); 
+% fig = figure(3); clf
+% ax1 = axes; 
+% imagesc(x,y,DTM); hold on
+% %scatter([df.Easting],[df.Northing],[],'green','.');
+% xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
+% set(gca,'fontsize',20); set(gca,'Ydir','normal');
+% xlabel('Easting [km]'); ylabel('Northing [km]');
+% c1 = colorbar;
+% ax2 = axes;
+% for idx = 1:length(unique_dates)   
+%     df_plot = df(df.time == unique_dates(idx), :);
+%     scatter(df_plot,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
+%     xlabel('Easting [km]'); ylabel('Northing [km]');
+%     set(gca,'fontsize',20); set(gca,'Ydir','normal');
+%     c2 = colorbar; c2.Label.String = 'Elevation residual (m)'; clim([-6 6])
+%     xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
+% 
+%     ax1.Title.String = string(unique_dates(idx),'MMM-yyyy');
+% 
+%     colormap(ax1,[0 0 0; cmocean('grey')])
+%     colormap(ax2,cmap)
+%     ax2.Visible = 'off';
+%     ax2.XTick = [];
+%     ax2.YTick = [];
+%     set(c1,'visible','off')
+% 
+% 
+%     drawnow
+%     frame = getframe(fig);
+%     im{idx} = frame2im(frame);
+%     clear df_plot
+% end
 %%
 % figure;
 % for idx = 1:length(unique_dates)
@@ -233,40 +200,40 @@ end
 %             DelayTime=1)
 %     end
 % end
-%%
-cmap = cmocean('-balance'); 
-fig = figure(4); clf
-ax1 = axes; 
-imagesc(x,y,DTM); hold on
-%scatter([df.Easting],[df.Northing],[],'green','.');
-xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
-set(gca,'fontsize',20); set(gca,'Ydir','normal');
-xlabel('Easting [km]'); ylabel('Northing [km]');
-c1 = colorbar; c1.Label.String = 'Elevation (m)';
-ax2 = axes;
-for idx = 36  
-    df_plot = df(df.time == unique_dates(idx), :);
-    scatter(df_plot,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
-    xlabel('Easting [km]'); ylabel('Northing [km]');
-    set(gca,'fontsize',20); set(gca,'Ydir','normal');
-    c2 = colorbar; c2.Label.String = 'Elevation residual (m)'; clim([-6 6])
-    xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
-    
-    ax1.Title.String = string(unique_dates(idx),'MMMM dd yyyy');
-
-    colormap(ax1,[0 0 0; cmocean('grey')])
-    colormap(ax2,cmap)
-    ax2.Visible = 'off';
-    ax2.XTick = [];
-    ax2.YTick = [];
-    set(c2,'visible','off')
-    
-
-    drawnow
-    frame = getframe(fig);
-    im{idx} = frame2im(frame);
-    clear df_plot
-end
+% %%
+% cmap = cmocean('-balance'); 
+% fig = figure(4); clf
+% ax1 = axes; 
+% imagesc(x,y,DTM); hold on
+% %scatter([df.Easting],[df.Northing],[],'green','.');
+% xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
+% set(gca,'fontsize',20); set(gca,'Ydir','normal');
+% xlabel('Easting [km]'); ylabel('Northing [km]');
+% c1 = colorbar; c1.Label.String = 'Elevation (m)';
+% ax2 = axes;
+% for idx = 36  
+%     df_plot = df(df.time == unique_dates(idx), :);
+%     scatter(df_plot,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
+%     xlabel('Easting [km]'); ylabel('Northing [km]');
+%     set(gca,'fontsize',20); set(gca,'Ydir','normal');
+%     c2 = colorbar; c2.Label.String = 'Elevation residual (m)'; clim([-6 6])
+%     xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
+% 
+%     ax1.Title.String = string(unique_dates(idx),'MMMM dd yyyy');
+% 
+%     colormap(ax1,[0 0 0; cmocean('grey')])
+%     colormap(ax2,cmap)
+%     ax2.Visible = 'off';
+%     ax2.XTick = [];
+%     ax2.YTick = [];
+%     set(c2,'visible','off')
+% 
+% 
+%     drawnow
+%     frame = getframe(fig);
+%     im{idx} = frame2im(frame);
+%     clear df_plot
+% end
 
 
 

@@ -31,7 +31,6 @@ DTM_slope = 'MCS_REFDEM_WGS84-slope.tif';
 DTM_aspect = 'MCS_REFDEM_WGS84-aspect.tif';
 
 %csv (be sure the path ends in a /)
-% csv_path = '/Users/alexiturriria/ICESat2-AlpineSnow/Sites/DCEW_2shape/IS2_Data/';
 csv_path = '/bsuhome/karinazikan/scratch/MCS/A6-40/';
 csv_name = 'MCS-ICESat2-A6-40-SnowCover.csv';
 
@@ -49,8 +48,8 @@ acronym = 'A6-40'; %for custom ATL06 with ATL08 classification set to A6-20 for 
 filename_sufix = 'A6-40-ref-elevations-grid-search-fineGS-agg';
 
 % Corse Grid search offset (from corse coregistration)
-Arow = 0;
-Acol = 1;
+Arow = 1;
+Acol = 0;
 
 %% Set output name
 outputname = [abbrev,'-ICESat2-', filename_sufix, '.csv'];
@@ -136,9 +135,15 @@ GradDecentFunc = @(A)reference_elevations(zmod(ix_off,:), norths(ix_off,:), east
 
 %% Grid of possible inputs to calculate initial guess
 A1 = -0.9:0.1:0.9;
+rmad_grid = zeros(length(A1),length(A1));
+
+k = 1;
+if k ~= 1
+    rmad_grid = readmatrix([abbrev,'_rmadFineGrid.csv']);
+end
 
 tic
-for i = 1:length(A1)
+for i = k:length(A1)
     tic
     for j = 1:length(A1)
         rmad_grid(i,j) = GradDecentFunc([Arow+A1(i),Acol+A1(j)]);
@@ -149,12 +154,6 @@ for i = 1:length(A1)
 end
 toc
 
-
-figure(2);
-im = imagesc(rmad_grid); 
-xticks(1:length(A1)); yticks(1:length(A1)); 
-xticklabels(A1); yticklabels(A1); 
-colorbar;
 
 [row, col] = find(ismember(rmad_grid, min(rmad_grid(:))));
 A1row = A1(row); A1col = A1(col);

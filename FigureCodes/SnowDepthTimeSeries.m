@@ -25,7 +25,7 @@ slope_correction = 1; % 0 = off, 1 = on
     % MCS snotel: snotel_E = 607075; snotel_N = 4865193;
     % Reynolds snowex: snotel_E = 519729; snotel_N = 4768225;
     % DCEW little deer point AWS: snotel_E = 570697; snotel_N = 4843042;
-snotel_E = 607075; snotel_N = 4865193;
+snotel_E = 640823; snotel_N = 4907084;
 
 
 %% Load data
@@ -59,11 +59,11 @@ if slope_correction == 1
 end
 
 % % Filter to near snotel station
-window = 100;
-% df_on = df_on((df_on.Easting <= (snotel_E + window) & df_on.Easting >= (snotel_E - window)),:);
-% df_on = df_on((df_on.Northing <= (snotel_N + window) & df_on.Northing >= (snotel_N - window)),:);
-% df_off = df_off((df_off.Easting <= (snotel_E + window) & df_off.Easting >= (snotel_E - window)),:);
-% df_off = df_off((df_off.Northing <= (snotel_N + window) & df_off.Northing >= (snotel_N - window)),:);
+window = 500;
+df_on = df_on((df_on.Easting <= (snotel_E + window) & df_on.Easting >= (snotel_E - window)),:);
+df_on = df_on((df_on.Northing <= (snotel_N + window) & df_on.Northing >= (snotel_N - window)),:);
+df_off = df_off((df_off.Easting <= (snotel_E + window) & df_off.Easting >= (snotel_E - window)),:);
+df_off = df_off((df_off.Northing <= (snotel_N + window) & df_off.Northing >= (snotel_N - window)),:);
 
 %% Only tracks that go through SNOTEL
 % dates_on = datetime(df_on.time.Year,df_on.time.Month,df_on.time.Day);

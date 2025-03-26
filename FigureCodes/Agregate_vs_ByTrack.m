@@ -15,7 +15,7 @@ addpath(['/Users/karinazikan/Documents/ICESat2-AlpineSnow/functions'])
 addpath(['/Users/karinazikan/Documents/cmocean'])
 
 %site abbreviation for file names
-abbrev = 'MCS';
+abbrev = 'Banner';
 %Product abbreviation for files
 prod_abbrev = 'A6-40';
 %Folder path
@@ -38,15 +38,15 @@ filepath = [folderpath 'IS2_Data/' prod_abbrev '/ATL06-' prod_abbrev '-AllData-n
 df_noCoreg_on = readtable(filepath);
 filepath = [folderpath 'IS2_Data/' prod_abbrev '/ATL06-' prod_abbrev '-AllData-noCoreg_off.csv'];
 df_noCoreg_off = readtable(filepath);
-filepath = [folderpath 'IS2_Data/' prod_abbrev '/ATL06-' prod_abbrev '-AllData-Agg_on.csv'];
+filepath = [folderpath 'IS2_Data/' prod_abbrev '/ATL06-' prod_abbrev '-AllData-fineGS-agg_on.csv'];
 df_on = readtable(filepath);
-filepath = [folderpath 'IS2_Data/' prod_abbrev '/ATL06-' prod_abbrev '-AllData-Agg_off.csv'];
+filepath = [folderpath 'IS2_Data/' prod_abbrev '/ATL06-' prod_abbrev '-AllData-fineGS-agg_off.csv'];
 df_off = readtable(filepath);
-filepath = [folderpath 'IS2_Data/' prod_abbrev '/ATL06-' prod_abbrev '-AllData-ByTrack_on.csv'];
+filepath = [folderpath 'IS2_Data/' prod_abbrev '/ATL06-' prod_abbrev '-AllData-fineGS-ByTrack_on.csv'];
 df_ByTrack_on = readtable(filepath);
-filepath = [folderpath 'IS2_Data/' prod_abbrev '/ATL06-' prod_abbrev '-AllData-ByTrack_off.csv'];
+filepath = [folderpath 'IS2_Data/' prod_abbrev '/ATL06-' prod_abbrev '-AllData-fineGS-ByTrack_off.csv'];
 df_ByTrack_off = readtable(filepath);
-filepath = [folderpath 'IS2_Data/' prod_abbrev '/' abbrev '_' prod_abbrev '-ByTrack-Ashift.csv'];
+filepath = [folderpath 'IS2_Data/' prod_abbrev '/' abbrev '_' prod_abbrev '-ByTrack-fineGS-Ashift.csv'];
 df_Ashift = readtable(filepath);
 
 %snow on bytract date array

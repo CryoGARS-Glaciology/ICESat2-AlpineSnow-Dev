@@ -13,7 +13,7 @@ site_names = string({'RCEW';'BCS';'MCS';'DCEW'});
 Coreg_type = string({'noCoreg';'Agg';'ByTrack'});
 
 %Turn dtm or is2 slope correction
-slope_correction = 1; % 0 = dtm, 1 = is2, 2 = no slope correction
+slope_correction = 2; % 0 = dtm, 1 = is2, 2 = no slope correction
 %Turn dtm or is2 slope correction
 slope_filter = 0; % 0 = none, 1 = remove slopes > 30 degrees
 
@@ -54,7 +54,7 @@ for j = 1:length(site_abbrevs)
                 ('No Slope correction used')
             else
             end
-        else
+        elseif slope_correction == 0
             df_off{j,k}.elev_residuals_vertcoreg = df_off{j,k}.elev_residuals_vertcoreg_dtm_slopecorrected;
             df_on{j,k}.elev_residuals_vertcoreg = df_on{j,k}.elev_residuals_vertcoreg_dtm_slopecorrected;
             df_off{j,k}.slope_mean = df_off{j,k}.IS2_slope_deg;
@@ -90,23 +90,11 @@ for j = 1:length(site_abbrevs)
     end
 end
 
-
-% % Filter out slopes above 20 degrees
-% for j = 1:length(site_abbrevs)
-%     if slope_correction == 0
-%         df_on{j}.elev_residuals_vertcoreg(df_on{j}.slope_mean > 20) = NaN;
-%         df_off{j}.elev_residuals_vertcoreg(df_off{j}.slope_mean > 20) = NaN;
-%         df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected(df_on{j}.slope_mean > 20) = NaN;
-%         df_off{j}.elev_residuals_vertcoreg_dtm_slopecorrected(df_off{j}.slope_mean > 20) = NaN;
-%     else
-%         df_on{j}.elev_residuals_vertcoreg(df_on{j}.IS2_slope_deg > 20) = NaN;
-%         df_off{j}.elev_residuals_vertcoreg(df_off{j}.IS2_slope_deg > 20) = NaN;
-%         df_on{j}.elev_residuals_vertcoreg_dtm_slopecorrected(df_on{j}.IS2_slope_deg > 20) = NaN;
-%         df_off{j}.elev_residuals_vertcoreg_dtm_slopecorrected(df_off{j}.IS2_slope_deg > 20) = NaN;
-%     end
-% end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-k = 2;
+%% set coregerestration type for future plots
+k = 2; % agg coreg
+
+
 %% Figures
 %% Non-parametric pdfs
 % snow on vs snow pff
@@ -179,51 +167,51 @@ end
 
 % Terrain Boxplots
 % no slope correction
-figure(4); clf
-for j = 1:length(site_abbrevs)
-    %ELEVATION
-    bins = {num2str(elev_binedges{j}(2))};
-    for i= 3:length(elev_binedges{j})
-        bins = [bins; {num2str(elev_binedges{j}(i))}];
-    end
-    subplot(length(site_abbrevs),3,(3*j-2));
-    hold on
-    groupElev = discretize(df_off{j,k}.elevation_report_mean,elev_binedges{j},'categorical',bins);
-    boxchart(groupElev, df_off{j,k}.elev_residuals_vertcoreg,'BoxFaceColor',colors{1}(3,:),'MarkerStyle','none')
-    ylim([-2,2])
-    set(gca,'fontsize',16,'box','on'); drawnow;
-    xlabel('Elevation (m a.s.l.)','fontsize',16); ylabel('Elevation residuals (m)','fontsize',16);
-    yline(0)
-
-    %ASPECT
-    bins = {num2str(aspect_binedges{j}(2))};
-    for i= 3:length(aspect_binedges{j})
-        bins = [bins; {num2str(aspect_binedges{j}(i))}];
-    end
-    subplot(length(site_abbrevs),3,(3*j-1));
-    hold on
-    groupAspect = discretize(df_off{j,k}.aspect_mean,aspect_binedges{j},'categorical',bins);
-    boxchart(groupAspect, df_off{j}.elev_residuals_vertcoreg,'BoxFaceColor',colors{2}(3,:),'MarkerStyle','none')
-    ylim([-2,2])
-    set(gca,'fontsize',16,'box','on'); drawnow;
-    xlabel('Aspect (degrees)','fontsize',16);
-    title(site_names{j},'fontsize',16);
-    yline(0)
-
-    %SLOPE
-    bins = {num2str(slope_binedges{j}(2))};
-    for i= 3:length(slope_binedges{j})
-        bins = [bins; {num2str(slope_binedges{j}(i))}];
-    end
-    subplot(length(site_abbrevs),3,(3*j));
-    hold on
-    groupSlope = discretize(df_off{j,k}.slope_mean,slope_binedges{j},'categorical',bins);
-    boxchart(groupSlope, df_off{j,k}.elev_residuals_vertcoreg,'BoxFaceColor',colors{3}(3,:),'MarkerStyle','none')
-    ylim([-3,3])
-    set(gca,'fontsize',16,'box','on'); drawnow;
-    xlabel('Slope (degrees)','fontsize',16);
-    yline(0)
-end
+% figure(4); clf
+% for j = 1:length(site_abbrevs)
+%     %ELEVATION
+%     bins = {num2str(elev_binedges{j}(2))};
+%     for i= 3:length(elev_binedges{j})
+%         bins = [bins; {num2str(elev_binedges{j}(i))}];
+%     end
+%     subplot(length(site_abbrevs),3,(3*j-2));
+%     hold on
+%     groupElev = discretize(df_off{j,k}.elevation_report_mean,elev_binedges{j},'categorical',bins);
+%     boxchart(groupElev, df_off{j,k}.elev_residuals_vertcoreg,'BoxFaceColor',colors{1}(3,:),'MarkerStyle','none')
+%     ylim([-2,2])
+%     set(gca,'fontsize',16,'box','on'); drawnow;
+%     xlabel('Elevation (m a.s.l.)','fontsize',16); ylabel('Elevation residuals (m)','fontsize',16);
+%     yline(0)
+% 
+%     %ASPECT
+%     bins = {num2str(aspect_binedges{j}(2))};
+%     for i= 3:length(aspect_binedges{j})
+%         bins = [bins; {num2str(aspect_binedges{j}(i))}];
+%     end
+%     subplot(length(site_abbrevs),3,(3*j-1));
+%     hold on
+%     groupAspect = discretize(df_off{j,k}.aspect_mean,aspect_binedges{j},'categorical',bins);
+%     boxchart(groupAspect, df_off{j}.elev_residuals_vertcoreg,'BoxFaceColor',colors{2}(3,:),'MarkerStyle','none')
+%     ylim([-2,2])
+%     set(gca,'fontsize',16,'box','on'); drawnow;
+%     xlabel('Aspect (degrees)','fontsize',16);
+%     title(site_names{j},'fontsize',16);
+%     yline(0)
+% 
+%     %SLOPE
+%     bins = {num2str(slope_binedges{j}(2))};
+%     for i= 3:length(slope_binedges{j})
+%         bins = [bins; {num2str(slope_binedges{j}(i))}];
+%     end
+%     subplot(length(site_abbrevs),3,(3*j));
+%     hold on
+%     groupSlope = discretize(df_off{j,k}.slope_mean,slope_binedges{j},'categorical',bins);
+%     boxchart(groupSlope, df_off{j,k}.elev_residuals_vertcoreg,'BoxFaceColor',colors{3}(3,:),'MarkerStyle','none')
+%     ylim([-3,3])
+%     set(gca,'fontsize',16,'box','on'); drawnow;
+%     xlabel('Slope (degrees)','fontsize',16);
+%     yline(0)
+% end
 
 % slope correction
 figure(5); clf

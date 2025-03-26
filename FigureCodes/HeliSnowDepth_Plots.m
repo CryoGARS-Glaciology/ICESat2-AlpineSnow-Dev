@@ -14,7 +14,7 @@ folderpath = ['/Users/karinazikan/Documents/ICESat2-AlpineSnow/Sites/' abbrev '/
 slope_correction = 1; % 0 = dtm, 1 = is2, 2 = no slope correction
 
 %Turn dtm or is2 slope correction
-slope_filter = 1; % 0 = none, 1 = remove slopes > 30 degrees
+slope_filter = 0; % 0 = none, 1 = remove slopes > 30 degrees
 
 % ICESat-2 residuals below 0 to NaN?
 remove_negative = 1; % 0 = off, 1 = on
@@ -26,14 +26,16 @@ colors{2} = cmocean('-algae',5);
 colors{3} = cmocean('ice',5);
 colors{4} = cmocean('-amp',5);
 
+Coreg_colors = ['#e6ab02'; '#1b9e77'; '#6e6dcf'];
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Load data
 % IS2 data
 filepath = [folderpath 'IS2_Data/' prod_abbrev '/' abbrev '-heli-snow-depth-grid-search-noCoreg.csv'];
 df_noCoreg = readtable(filepath);
-filepath = [folderpath 'IS2_Data/' prod_abbrev '/' abbrev '-heli-snow-depth-grid-search-agg.csv'];
+filepath = [folderpath 'IS2_Data/' prod_abbrev '/' abbrev '-heli-snow-depth-FineGS-agg.csv'];
 df_agg = readtable(filepath);
-filepath = [folderpath 'IS2_Data/' prod_abbrev '/' abbrev '-heli-snow-depth-grid-search-ByTrack.csv'];
+filepath = [folderpath 'IS2_Data/' prod_abbrev '/' abbrev '-heli-snow-depth-FineGS-ByTrack.csv'];
 df_ByTrack = readtable(filepath);
 
 % snow on
@@ -84,10 +86,16 @@ end
 %% Stats
 Residuals = df_noCoreg_on.elev_residuals_vertcoreg - df_noCoreg_on.snowdepth;
 Rnmad(1) = 1.4826*median(abs(Residuals-nanmean(Residuals)),'omitnan'); % normalized meadian absolute difference
+Rmed(1) = median(Residuals,'omitnan'); % median
+Rmean(1) = nanmean(Residuals); % mean
 Residuals = df_agg_on.elev_residuals_vertcoreg - df_agg_on.snowdepth;
 Rnmad(2) = 1.4826*median(abs(Residuals-nanmean(Residuals)),'omitnan'); 
+Rmed(2) = median(Residuals,'omitnan'); % median
+Rmean(2) = nanmean(Residuals); % mean
 Residuals = df_ByTrack_on.elev_residuals_vertcoreg - df_ByTrack_on.snowdepth;
 Rnmad(3) = 1.4826*median(abs(Residuals-nanmean(Residuals)),'omitnan'); 
+Rmed(3) = median(Residuals,'omitnan'); % median
+Rmean(3) = nanmean(Residuals); % mean
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -147,10 +155,10 @@ unique_dates = unique(dates);
 
 for i = 1:length(unique_dates)
     df_noCoreg_temp = df_noCoreg_on(datetime(df_noCoreg_on.time.Year,df_noCoreg_on.time.Month,df_noCoreg_on.time.Day) == unique_dates(i),:);
-    df_agg_temp = df_noCoreg_on(datetime(df_agg_on.time.Year,df_agg_on.time.Month,df_agg_on.time.Day) == unique_dates(i),:);
+    df_agg_temp = df_agg_on(datetime(df_agg_on.time.Year,df_agg_on.time.Month,df_agg_on.time.Day) == unique_dates(i),:);
     df_ByTrack_temp = df_ByTrack_on(datetime(df_ByTrack_on.time.Year,df_ByTrack_on.time.Month,df_ByTrack_on.time.Day) == unique_dates(i),:);
 
-    figure(i + 6); clf;
+    figure(i + 3); clf;
     subplot(3,1,1); hold on
     pd = fitdist(df_noCoreg_temp.snowdepth,'kernel','Kernel','normal');
     fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 3);
@@ -162,8 +170,8 @@ for i = 1:length(unique_dates)
     %set(gcf,'position',[50 50 800 400]);
     %xlabel('Snow Depth (m)'); ylabel('Probability density');
     %legend('Helicopter Lidar Snow Depth','ICESat-2 Snow Depth','Average Heli Snow Depth','Median ICESat-2 Snow Depth','Location','northwest');
-    title('No Coregistration')
-    legend('Helicopter Lidar Snow Depth','ICESat-2 Snow Depth','Median Heli Snow Depth','Median ICESat-2 Snow Depth','Location','northwest');
+    title(['No Coregistration - ' string(unique_dates(i))])
+    legend('Helicopter Lidar Snow Depth','ICESat-2 Snow Depth','Median Heli Snow Depth','Median ICESat-2 Snow Depth','Location','northeast');
     hold off
 
     subplot(3,1,2); hold on
@@ -182,19 +190,21 @@ for i = 1:length(unique_dates)
     hold off
 
     % Vertically coregistered - snow free & snow on
-    subplot(3,1,3); hold on
-    pd = fitdist(df_ByTrack_temp.snowdepth,'kernel','Kernel','normal');
-    fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 3);
-    pd = fitdist(df_ByTrack_temp.elev_residuals_vertcoreg,'kernel','Kernel','normal');
-    fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 3);
-    xline(median(df_ByTrack_temp.snowdepth,'omitnan'), 'Linewidth', 3,'Color','blue')
-    xline(median(df_ByTrack_temp.elev_residuals_vertcoreg,'omitnan'), 'Linewidth', 3,'Color','red')
-    set(gca,'fontsize',16,'xlim',xbounds);
-    %set(gcf,'position',[50 50 800 400]);
-    xlabel('Snow Depth (m)'); %ylabel('Probability density');
-    %legend('Helicopter Lidar Snow Depth','ICESat-2 Snow Depth','Average Heli Snow Depth','Median ICESat-2 Snow Depth','Location','northwest');
-    title('By Track Coregistration')
-    hold off
+    if sum(~isnan(df_ByTrack_temp.snowdepth)) ~= 0
+        subplot(3,1,3); hold on
+        pd = fitdist(df_ByTrack_temp.snowdepth,'kernel','Kernel','normal');
+        fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 3);
+        pd = fitdist(df_ByTrack_temp.elev_residuals_vertcoreg,'kernel','Kernel','normal');
+        fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 3);
+        xline(median(df_ByTrack_temp.snowdepth,'omitnan'), 'Linewidth', 3,'Color','blue')
+        xline(median(df_ByTrack_temp.elev_residuals_vertcoreg,'omitnan'), 'Linewidth', 3,'Color','red')
+        set(gca,'fontsize',16,'xlim',xbounds);
+        %set(gcf,'position',[50 50 800 400]);
+        xlabel('Snow Depth (m)'); %ylabel('Probability density');
+        %legend('Helicopter Lidar Snow Depth','ICESat-2 Snow Depth','Average Heli Snow Depth','Median ICESat-2 Snow Depth','Location','northwest');
+        title('By Track Coregistration')
+        hold off
+    end
 end
 
 %% Snow depth pdfs
@@ -213,24 +223,24 @@ legend('No Coregistration', 'Aggregated Coregistration', 'By Track Coregistratio
 hold off
 
 %% snow depth residuals pdfs
-xbounds = [-6 4];
+xbounds = [-4 4];
 % Not vertically coregistered - snow free
 figure(3); clf; 
 hold on
 pd = fitdist((df_noCoreg_on.elev_residuals_vertcoreg - df_noCoreg_on.snowdepth),'kernel','Kernel','normal');
-fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 4);
+fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 4,'Color', Coreg_colors(1,:));
 pd = fitdist((df_agg_on.elev_residuals_vertcoreg - df_agg_on.snowdepth),'kernel','Kernel','normal');
-fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 4);
+fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 4,'Color', Coreg_colors(2,:));
 pd = fitdist((df_ByTrack_on.elev_residuals_vertcoreg - df_ByTrack_on.snowdepth),'kernel','Kernel','normal');
-fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 4);
+fplot(@(x) pdf(pd,x),[-10 8], 'Linewidth', 4,'Color', Coreg_colors(3,:));
 xline(0, 'Linewidth', 1,'Color','black');
 % xline(median((df_noCoreg_on.elev_residuals_vertcoreg - df_noCoreg_on.snowdepth),'omitnan'), 'Linewidth', 2,'Color',"#0072BD")
 % xline(median((df_agg_on.elev_residuals_vertcoreg - df_agg_on.snowdepth),'omitnan'), 'Linewidth', 2,'Color',"#D95319")
 % xline(median((df_ByTrack_on.elev_residuals_vertcoreg - df_ByTrack_on.snowdepth),'omitnan'), 'Linewidth', 2,'Color',	"#EDB120")
-set(gca,'fontsize',20,'xlim',xbounds);
+set(gca,'fontsize',14,'xlim',xbounds);
 %set(gcf,'position',[50 50 800 400]);
-xlabel('Snow Depth Residuals (m)'); ylabel('Probability density');
-legend('No Coregistration', 'Aggregated Coregistration', 'By Track Coregistration');
+xlabel('SD\_error (m)'); ylabel('Probability density');
+legend('No Coregistration', 'Aggregated Coregistration', 'Individual Coregistration');
 hold off
 
 

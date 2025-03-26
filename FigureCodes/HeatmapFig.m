@@ -14,16 +14,19 @@ clearvars;
 addpath(['/Users/karinazikan/Documents/functions'])
 addpath(['/Users/karinazikan/Documents/cmocean'])
 
-%Folder path
-folderpath = '/Users/karinazikan/Documents/ICESat2-AlpineSnow/Sites/MCS/';
+
 %site abbreviation for file names
-abbrev = 'BCS';
+abbrev = 'Banner';
+%Folder path
+folderpath = ['/Users/karinazikan/Documents/ICESat2-AlpineSnow/Sites/' abbrev '/'];
 
 %Turn slope correction off or on
 slope_correction = 1; % 0 = off, 1 = on
 
+numbins = 20;
+
 %% Load data
-filepath = [folderpath 'IS2_Data/A6-40/ATL06-A6-40-AllData-Agg.csv'];
+filepath = [folderpath 'IS2_Data/A6-40/ATL06-A6-40-AllData-fineGS-agg.csv'];
 df = readtable(filepath);
 
 %% Grouped data plot - elevations
@@ -52,8 +55,8 @@ end
 
 df.elevation_report_nw_mean(isnan(SnowDepthAll)) = NaN;
 % group elevation
-figure(7);
-h = histogram(df.elevation_report_nw_mean,30);
+figure(1);
+h = histogram(df.elevation_report_nw_mean,numbins);
 elev_binwidth = h.BinWidth; elev_binedges = h.BinEdges;
 clear h;
 for i = 2:length(elev_binedges)
@@ -62,8 +65,8 @@ end
 groupElev = discretize(df.elevation_report_nw_mean, elev_binedges,'categorical',bins);
 
 % group aspect
-figure(8);
-h = histogram(df.aspect_mean,30);
+figure(2);
+h = histogram(df.aspect_mean,numbins);
 aspect_binwidth = h.BinWidth; aspect_binedges = h.BinEdges;
 clear h;
 for i = 2:length(aspect_binedges)
@@ -72,8 +75,8 @@ end
 groupAspect = discretize(df.aspect_mean, aspect_binedges,'categorical',bins);
 
 % group slope
-figure(9);
-h = histogram(df.slope_mean,30);
+figure(3);
+h = histogram(df.slope_mean,numbins);
 slope_binwidth = h.BinWidth; slope_binedges = h.BinEdges;
 clear h;
 for i = 2:length(slope_binedges)
@@ -110,9 +113,9 @@ dates_array = dates_array';
 % Make grouped snow depths arrays
 for k = 1:length(dates_array)
     if ismember(dates_array(k),dates) == 0
-        SnowDepthMedArray_elev(k,(1:30)) = NaN;
-        SnowDepthMedArray_aspect(k,(1:30)) = NaN;
-        SnowDepthMedArray_slope(k,(1:30)) = NaN;
+        SnowDepthMedArray_elev(k,(1:numbins)) = NaN;
+        SnowDepthMedArray_aspect(k,(1:numbins)) = NaN;
+        SnowDepthMedArray_slope(k,(1:numbins)) = NaN;
     else
         for i = 2:length(elev_binedges)
             % elevation
@@ -157,9 +160,9 @@ ylabels(1:3:end) = NaN;
 ylabels(2:3:end) = NaN;
 
 if slope_correction == 1
-    fig1 = figure(9); clf
-else
     fig1 = figure(4); clf
+else
+    fig1 = figure(7); clf
 end
 datenum = convertTo(dates_array,'yyyymmdd');
 imagesc(datenum,elev_binedges([2:length(elev_binedges)]),SnowDepthMedArray_elev',[-3 3])
@@ -167,15 +170,16 @@ cmap = cmocean('-balance'); cmap = [ 0 0 0 ; cmap ];
 set(gca,'fontsize',18,'YDir','normal');
 colormap(cmap); c = colorbar; c.Label.String = 'Elevation Residual (m)';
 ylabel('Elevation (m)')
+title(abbrev)
 a=(max(datenum)-min(datenum))/(length(datenum)-1);
 ticks = min(datenum):a:max(datenum);
 xticks(ticks)
 xticklabels(ylabels)
 
 if slope_correction == 1
-    fig2 = figure(2); clf
-else
     fig2 = figure(5); clf
+else
+    fig2 = figure(8); clf
 end
 imagesc(datenum,aspect_binedges([2:length(aspect_binedges)]),SnowDepthMedArray_aspect',[-3 3])
 cmap = cmocean('-balance'); cmap = [ 0 0 0 ; cmap ];
@@ -188,9 +192,9 @@ xticks(ticks)
 xticklabels(ylabels)
 
 if slope_correction == 1
-    fig3 = figure(3); clf
-else
     fig3 = figure(6); clf
+else
+    fig3 = figure(9); clf
 end
 imagesc(datenum,slope_binedges([2:length(slope_binedges)]),SnowDepthMedArray_slope',[-3 3])
 cmap = cmocean('-balance'); cmap = [ 0 0 0 ; cmap ];
