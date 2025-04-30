@@ -15,12 +15,13 @@ Coreg_type = string({'noCoreg';'fineGS-agg';'fineGS-ByTrack'});
 %Turn dtm or is2 slope correction
 slope_correction = 1; % 0 = dtm, 1 = is2, 2 = no slope correction
 %Turn dtm or is2 slope correction
-slope_filter = 0; % 0 = none, 1 = remove slopes > 30 degrees
+slope_filter = 2; % 0 = none, 1 = remove slopes < slope_threshhold 2 = remove slopes > slope_threshhold
+slope_threshhold = 10;
 % ICESat-2 residuals below 0 to NaN?
 remove_negative = 1; % 0 = off, 1 = on
 
 %Weather Station Location
-% Reynolds snowex: snotel_E = 519729; snotel_N = 4768225;
+% Reynolds RCE-176 USDA AWS: snotel_E = 519729; snotel_N = 4768225;
 % Banner snotel: snotel_E = 640823; snotel_N = 4907084;
 % MCS snotel: snotel_E = 607075; snotel_N = 4865193;
 % DCEW little deer point AWS: snotel_E = 570697; snotel_N = 4843042;
@@ -70,8 +71,11 @@ for j = 1:length(site_abbrevs)
             end
         end
         if slope_filter == 1
-            df_off{j,k}(df_off{j,k}.slope_mean > 30,:) = [];
-            df_on{j,k}(df_on{j,k}.slope_mean > 30,:) = [];
+            df_off{j,k}(df_off{j,k}.slope_mean < slope_threshhold,:) = [];
+            df_on{j,k}(df_on{j,k}.slope_mean < slope_threshhold,:) = [];
+        elseif slope_filter == 2
+            df_off{j,k}(df_off{j,k}.slope_mean > slope_threshhold,:) = [];
+            df_on{j,k}(df_on{j,k}.slope_mean > slope_threshhold,:) = [];
         end
         % remove negative ICESat-2 elevation residuals
         if remove_negative == 1
@@ -188,23 +192,32 @@ for k = 2%1:length(Coreg_type)
         plot(snoteldepth_dategroup.time,snoteldepth_dategroup.Fun_SnowDepth, 'LineWidth',1,'Color','#969696')
         scatter(snowdepth_dategroup.time,snowdepth_dategroup.Fun_residuals,75,'filled','MarkerFaceColor',site_colors(j,:),'Marker',site_shapes(j))
         %scatter(snowdepth_thruTracks_dategroup.time,snowdepth_thruTracks_dategroup.Fun_residuals,75,'filled','MarkerFaceColor',[0.8500 0.3250 0.0980],'Marker',site_shapes(j))
-        scatter(snowdepth_window_dategroup.time,snowdepth_window_dategroup.Fun_residuals,75,'filled','MarkerEdgeColor','k','Marker',site_shapes(j),'MarkerFaceColor','none')
+        %scatter(snowdepth_window_dategroup.time,snowdepth_window_dategroup.Fun_residuals,75,'filled','MarkerEdgeColor','k','Marker',site_shapes(j),'MarkerFaceColor','none')
         title(site_names{j});
         set(gca,'fontsize',14);
         xlim([datetime(2018,9,1) datetime(2024,6,1)])
         ylim([-0.5 4])
         ylabel('Snow Depth (m)')
+        legend('SNOTEL median snow depth','ICESat-2 median snow depth','ICESat-2 median snow depth within 500 m of AWS');
+
 
         hold off
     end
-    xlabel('Date'); ylabel('Snow Depth');
-    legend('AWS median snow depth','ICESat-2 median snow depth','ICESat-2 median snow depth within 500 m of AWS');
-
+    xlabel('Date'); ylabel('Snow Depth (m)');
+    
     figure(k+3); clf
     for j = 1:length(site_abbrevs)
         df_on_temp = df_on{j,k};
         df_off_temp = df_off{j,k};
         snotel_temp = snotel{j};
+
+        if j == 1
+            df_off_temp(df_off_temp.time.Month > 11,:) = [];
+            df_off_temp(df_off_temp.time.Month < 5,:) = [];
+        else
+            df_off_temp(df_off_temp.time.Month > 10,:) = [];
+            df_off_temp(df_off_temp.time.Month < 6,:) = [];
+        end
 
         snowdepth = table([datetime(df_on_temp.time.Year,df_on_temp.time.Month,df_on_temp.time.Day)], df_on_temp.elev_residuals_vertcoreg, 'VariableNames',["time","residuals"]);
         snowdepth_dategroup = varfun(@(x)median(x,'omitnan'),snowdepth,'GroupingVariables',{'time'});
@@ -214,57 +227,57 @@ for k = 2%1:length(Coreg_type)
         snoteldepth_dategroup = varfun(@(x)nanmean(x),snoteldepth,'GroupingVariables',{'time'});
 
         subplot(4,1,j); hold on
-        plot(snoteldepth_dategroup.time,snoteldepth_dategroup.Fun_SnowDepth, 'LineWidth',2,'Color',[0.9290, 0.6940, 0.1250]	)
-        scatter(elevresiduals_dategroup.time,elevresiduals_dategroup.Fun_residuals,75,'MarkerEdgeColor',[0.8500, 0.3250, 0.0980])
-        scatter(snowdepth_dategroup.time,snowdepth_dategroup.Fun_residuals,75,'filled','MarkerFaceColor',[0, 0.4470, 0.7410])
-        set(gca,'fontsize',20);
+        plot(snoteldepth_dategroup.time,snoteldepth_dategroup.Fun_SnowDepth, 'LineWidth',1,'Color','#969696')
+        scatter(elevresiduals_dategroup.time,elevresiduals_dategroup.Fun_residuals,75,'filled','MarkerEdgeColor','k','Marker',site_shapes(j),'MarkerFaceColor','none')
+        scatter(snowdepth_dategroup.time,snowdepth_dategroup.Fun_residuals,75,'filled','MarkerFaceColor',site_colors(j,:),'Marker',site_shapes(j))
+        set(gca,'fontsize',14);
         title(site_names{j});
         hold off
-        xlim([datetime(2018,1,1) datetime(2024,6,1)])
+        xlim([datetime(2018,9,1) datetime(2024,6,1)])
         ylim([-0.5 4])
         ylabel('Snow Depth')
     end
-    legend('AWS mean snow depth','ICESat-2 median snow free elevation residuals','ICESat-2 median snow depth')
-    sgtitle(Coreg_type{k});
+    legend('SNOTEL median snow depth','ICESat-2 median snow-free elevation residuals','ICESat-2 median snow depth')
+   
     xlabel('Date');
 
-    % figure(k+6); clf % plot snow free elevation residuals
-    % for j = 1:length(site_abbrevs)
-    %     df_on_temp = df_on{j,k};
-    %     df_off_temp = df_off{j,k};
-    %     snotel_temp = snotel{j};
-    % 
-    %     if j == 1
-    %         df_off_temp(df_off_temp.time.Month > 11,:) = [];
-    %         df_off_temp(df_off_temp.time.Month < 5,:) = [];
-    %     else
-    %         df_off_temp(df_off_temp.time.Month > 10,:) = [];
-    %         df_off_temp(df_off_temp.time.Month < 6,:) = [];
-    %     end
-    % 
-    %     snowdepth = table([datetime(df_on_temp.time.Year,df_on_temp.time.Month,df_on_temp.time.Day)], df_on_temp.elev_residuals_vertcoreg, 'VariableNames',["time","residuals"]);
-    %     snowdepth_dategroup = varfun(@(x)median(x,'omitnan'),snowdepth,'GroupingVariables',{'time'});
-    %     elevresiduals = table([datetime(df_off_temp.time.Year,df_off_temp.time.Month,df_off_temp.time.Day)], df_off_temp.elev_residuals_vertcoreg, 'VariableNames',["time","residuals"]);
-    %     elevresiduals_dategroup = varfun(@(x)median(x,'omitnan'),elevresiduals,'GroupingVariables',{'time'});
-    %     elevresiduals_error_dategroup = varfun(@(x)iqr(x),elevresiduals,'GroupingVariables',{'time'});
-    %     snoteldepth = table(snotel_temp.Date, snotel_temp.SNWD_I_1_in_ ,'VariableNames',["time","SnowDepth"]);
-    %     snoteldepth_dategroup = varfun(@(x)nanmean(x),snoteldepth,'GroupingVariables',{'time'});
-    % 
-    %     subplot(4,1,j); cla; hold on
-    %     %plot(snoteldepth_dategroup.time,snoteldepth_dategroup.Fun_SnowDepth, 'LineWidth',2,'Color',[0.9290, 0.6940, 0.1250]	)
-    %     %errorbar(elevresiduals_dategroup.time,elevresiduals_dategroup.Fun_residuals,elevresiduals_error_dategroup.Fun_residuals, 'vertical', 'LineStyle', 'none');
-    %     scatter(elevresiduals_dategroup.time,elevresiduals_dategroup.Fun_residuals,75,'filled','o')
-    %     %scatter(snowdepth_dategroup.time,snowdepth_dategroup.Fun_residuals,'filled','MarkerFaceColor',[0, 0.4470, 0.7410])
-    %     yline(0)
-    %     set(gca,'fontsize',20);
-    %     title(site_names{j});
-    %     ylabel('Elevation Residual (m)')
-    %     xlim([datetime(2018,06,01) datetime(2024,01,01)])
-    %     ylim([-1 1])
-    %     hold off
-    % end
-    % legend( 'ICESat-2 median snow free elevation residuals','zero line')
-    % sgtitle(Coreg_type{k});
+    figure(k+6); clf % plot snow free elevation residuals
+    for j = 1:length(site_abbrevs)
+        df_on_temp = df_on{j,k};
+        df_off_temp = df_off{j,k};
+        snotel_temp = snotel{j};
+
+        if j == 1
+            df_off_temp(df_off_temp.time.Month > 11,:) = [];
+            df_off_temp(df_off_temp.time.Month < 5,:) = [];
+        else
+            df_off_temp(df_off_temp.time.Month > 10,:) = [];
+            df_off_temp(df_off_temp.time.Month < 6,:) = [];
+        end
+
+        snowdepth = table([datetime(df_on_temp.time.Year,df_on_temp.time.Month,df_on_temp.time.Day)], df_on_temp.elev_residuals_vertcoreg, 'VariableNames',["time","residuals"]);
+        snowdepth_dategroup = varfun(@(x)median(x,'omitnan'),snowdepth,'GroupingVariables',{'time'});
+        elevresiduals = table([datetime(df_off_temp.time.Year,df_off_temp.time.Month,df_off_temp.time.Day)], df_off_temp.elev_residuals_vertcoreg, 'VariableNames',["time","residuals"]);
+        elevresiduals_dategroup = varfun(@(x)median(x,'omitnan'),elevresiduals,'GroupingVariables',{'time'});
+        elevresiduals_error_dategroup = varfun(@(x)iqr(x),elevresiduals,'GroupingVariables',{'time'});
+        snoteldepth = table(snotel_temp.Date, snotel_temp.SNWD_I_1_in_ ,'VariableNames',["time","SnowDepth"]);
+        snoteldepth_dategroup = varfun(@(x)nanmean(x),snoteldepth,'GroupingVariables',{'time'});
+
+        subplot(4,1,j); cla; hold on
+        %plot(snoteldepth_dategroup.time,snoteldepth_dategroup.Fun_SnowDepth, 'LineWidth',2,'Color',[0.9290, 0.6940, 0.1250]	)
+        %errorbar(elevresiduals_dategroup.time,elevresiduals_dategroup.Fun_residuals,elevresiduals_error_dategroup.Fun_residuals, 'vertical', 'LineStyle', 'none');
+        scatter(elevresiduals_dategroup.time,elevresiduals_dategroup.Fun_residuals,75,'filled','MarkerFaceColor',site_colors(j,:),'Marker',site_shapes(j))
+        %scatter(snowdepth_dategroup.time,snowdepth_dategroup.Fun_residuals,'filled','MarkerFaceColor',[0, 0.4470, 0.7410])
+        yline(0)
+        set(gca,'fontsize',14);
+        title(site_names{j});
+        ylabel('Elevation Residual (m)')
+        xlim([datetime(2018,9,1) datetime(2024,6,1)])
+        ylim([-1 1])
+        legend( 'ICESat-2 median snow free elevation residuals','zero line')
+        hold off
+    end
+    
 end
 %%
 % fig = figure(10); clf
@@ -317,7 +330,7 @@ for k = 2
         snoteldepth = table(snotel_temp.Date, snotel_temp.SNWD_I_1_in_ ,'VariableNames',["time","SnowDepth"]);
         snoteldepth_dategroup = varfun(@(x)median(x,'omitnan'),snoteldepth,'GroupingVariables',{'time'});
         snoteldepth_dategroup_IS2_dates = snoteldepth_dategroup(ismember(snoteldepth_dategroup.time, elevresiduals_dategroup.time), :);
-        snowdepth_error = (snowdepth_dategroup.Fun_residuals(ismember(snowdepth_dategroup.time,snoteldepth_dategroup_IS2_dates.time)) - snoteldepth_dategroup_IS2_dates.Fun_SnowDepth(ismember(snoteldepth_dategroup_IS2_dates.time,snowdepth_dategroup.time)));
+        snowdepth_error = (snowdepth_dategroup.Fun_residuals(ismember(snowdepth_dategroup.time,snoteldepth_dategroup_IS2_dates.time))) - snoteldepth_dategroup_IS2_dates.Fun_SnowDepth(ismember(snoteldepth_dategroup_IS2_dates.time,snowdepth_dategroup.time));
         median_SD_error(j) = median(abs(snowdepth_error),'omitnan');
         rmse_SD_error(j) = (nanmean((snowdepth_error).^2)).^(0.5);
         snowdepth_window_error = (snowdepth_window_dategroup.Fun_residuals(ismember(snowdepth_window_dategroup.time,snoteldepth_dategroup_IS2_dates.time)) - snoteldepth_dategroup_IS2_dates.Fun_SnowDepth(ismember(snoteldepth_dategroup_IS2_dates.time,snowdepth_window_dategroup.time)));
@@ -337,14 +350,29 @@ for k = 2
 
         figure(13);
         hold on
-        scatter(snoteldepth_dategroup_IS2_dates.Fun_SnowDepth(ismember(snoteldepth_dategroup_IS2_dates.time,snowdepth_window_dategroup.time)),snowdepth_window_dategroup.Fun_residuals(ismember(snowdepth_window_dategroup.time,snoteldepth_dategroup_IS2_dates.time)), 100,'MarkerEdgeColor', site_colors(j,:),'Marker',site_shapes(j))
+        scatter(snoteldepth_dategroup_IS2_dates.Fun_SnowDepth(ismember(snoteldepth_dategroup_IS2_dates.time,snowdepth_window_dategroup.time)),snowdepth_window_dategroup.Fun_residuals(ismember(snowdepth_window_dategroup.time,snoteldepth_dategroup_IS2_dates.time)), 100,'filled','MarkerFaceColor',site_colors(j,:),'Marker',site_shapes(j))
         hold off
 
         figure(14);
         hold on
         scatter(snoteldepth_dategroup_IS2_dates.Fun_SnowDepth(ismember(snoteldepth_dategroup_IS2_dates.time,snowdepth_dategroup.time)),snowdepth_dategroup.Fun_residuals(ismember(snowdepth_dategroup.time,snoteldepth_dategroup_IS2_dates.time)), 100,'filled','MarkerFaceColor',site_colors(j,:),'Marker',site_shapes(j))
         hold off
+
+        figure(7); % plot snow free elevation residuals
+        subplot(4,1,j); cla; hold on
+        %plot(snoteldepth_dategroup.time,snoteldepth_dategroup.Fun_SnowDepth, 'LineWidth',2,'Color',[0.9290, 0.6940, 0.1250]	)
+        %errorbar(elevresiduals_dategroup.time,elevresiduals_dategroup.Fun_residuals,elevresiduals_error_dategroup.Fun_residuals, 'vertical', 'LineStyle', 'none');
+        scatter(snowdepth_dategroup.time(ismember(snowdepth_dategroup.time,snoteldepth_dategroup_IS2_dates.time)),snowdepth_error,75,'filled','MarkerFaceColor',site_colors(j,:),'Marker',site_shapes(j))
+        %scatter(snowdepth_dategroup.time,snowdepth_dategroup.Fun_residuals,'filled','MarkerFaceColor',[0, 0.4470, 0.7410])
+        yline(0)
+        set(gca,'fontsize',14);
+        title(site_names{j});
+        ylabel('Snow Depth Error (m)')
+        xlim([datetime(2018,9,1) datetime(2024,6,1)])
+        ylim([-1 1])
+        hold off
     end
+
      for j = 1:length(site_abbrevs)
        df_on_temp = df_on{j,k};
         df_off_temp = df_off{j,k};
@@ -381,6 +409,9 @@ figure(14);
 xlabel('Median d\_AWS (m)'); ylabel('Median d\_IS2 (m)');
 set(gca,'fontsize',14,'xlim',[0,2.5],'ylim',[-1,2.5],'DataAspectRatio',[1 1 1]);
 legend(['1-1 Line'; site_names; 'within 500 m of AWS'],'Location','northwest')
+
+figure(7);
+legend( 'ICESat-2 median snow depth errors','zero line')
 
 %% Terrain Boxplots
 figure(17); clf; hold on
@@ -524,15 +555,27 @@ for k = 2
 
     figure(20)
     xticklabels('auto');
-    %xticklabels({'1300' , '' , '1500', '' , '1700', '' , '1900' , '' , '2100' , '' , '2300' , '' , '2500' , '' , '2700' , '' })
+    subplot(4,3,j.*3);
+    xticklabels({'1100', '', '1300' , '' , '1500', '' , '1700', '' , '1900' , '' , '2100' , '' , '2300' , '' , '2500' , '' , '2700' , '', '2900', '' })
     xlabel('Elevation (m)');
     subplot(4,3,[1 2 4 5 7 8 10 11])
+    ylim([0 3]); 
     line = lsline;
     for j = 1:length(site_abbrevs)
         line(j).Color = site_colors(5-j,:);
     end
+    % cut fit lines to data range
+    line(1).XData = [1500 2000];
+    line(1).YData = [0.4708 1.4053];
+    line(2).XData = [1800 2300];
+    line(2).YData = [1.4546 1.9363];
+    line(3).XData = [1600 2600];
+    line(3).YData = [0.9730 1.6891];
+    line(4).XData = [1400 2000];
+    line(4).YData = [0.3713 0.9297];
+    
+    % labels
     legend(site_names, 'Location','northwest')
-
     xlabel('Elevation (m)');
     
 end

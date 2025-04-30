@@ -5,6 +5,7 @@
 
 %% Inputs
 clearvars;
+addpath(['/Users/karinazikan/Documents/cmocean'])
 
 %Folder path
 folderpath = '/Users/karinazikan/Documents/ICESat2-AlpineSnow/Sites/';
@@ -15,7 +16,7 @@ site_names = string({'RCEW';'BCS';'MCS';'DCEW'});
 %Turn dtm or is2 slope correction
 slope_correction = 1; % 0 = dtm, 1 = is2, 2 = no slope correction
 %Turn dtm or is2 slope correction
-slope_filter = 0; % 0 = none, 1 = remove slopes < slope_threshhold. 2 = remove slopes > slope_threshhold
+slope_filter = 2; % 0 = none, 1 = remove slopes < slope_threshhold. 2 = remove slopes > slope_threshhold
 slope_threshhold = 10;
 % ICESat-2 residuals below 0 to NaN?
 remove_negative = 1; % 0 = off, 1 = on
@@ -85,26 +86,27 @@ for j = 1:length(granuel_files)
     time = start_time + seconds(granuel.delta_time);
     granuel.time = time;
 
-    %% group data
+    % group data
     G = findgroups(granuel.gt, granuel.yyyymmdd);
     group_ref_pa_deg = splitapply(@(x){x}, [granuel.ref_pa_deg] , G);
     group_time = splitapply(@(x){x}, [granuel.time] , G);
     max_angle(j) = max(group_ref_pa_deg{length(group_ref_pa_deg)});
     gran_dates(j) = datetime(time(1).Year,time(1).Month,time(1).Day);
 
-    % %% plot
-    % % angle over time
+    % % plot
     % figure(j); clf
+    % % angle over time
+    % subplot(2,1,1)
     % hold on
     % for i = 1:length(group_ref_pa_deg)
     %     plot(group_time{i}, group_ref_pa_deg{i}, 'LineWidth',3)
     %     xlabel('time'); ylabel('angle (deg)')
-    %     set(gca,'fontsize',20);
+    %     %set(gca,'fontsize',20);
     % end
     % hold off
-    %
+    % 
     % % location plot
-    % figure(j + 6); clf
+    % subplot(2,1,2)
     % geoscatter(granuel.lat,granuel.lon,"filled")
     % geobasemap topographic
 end
@@ -190,7 +192,14 @@ for j = 1:length(site_abbrevs)
 
     figure(5);
     hold on
-    scatter(unique_dates,Rangle{j},100,ave_slope{j},'filled','Marker',site_shapes(j))
+    scatter(unique_dates,Rangle{j},100,'filled','Marker',site_shapes(j),'MarkerFaceColor',site_colors(j,:))
+    %scatter(unique_dates,Rangle{j},100,ave_slope{j},'filled','Marker',site_shapes(j))
+    hold off
+
+    figure(6);
+    hold on
+    scatter(unique_dates,ave_slope{j},100,'filled','Marker',site_shapes(j),'MarkerFaceColor',site_colors(j,:))
+    %scatter(unique_dates,Rangle{j},100,ave_slope{j},'filled','Marker',site_shapes(j))
     hold off
 end
 
@@ -209,16 +218,21 @@ legend(site_names)
 figure(2);
 hold on
 yline(0, 'Linewidth', 1,'Color','black');
-line = lsline;
-for j = 1:length(site_abbrevs)
-    line(j).Color = site_colors(5-j,:);
-    B = [ones(size(line(j).XData(:))), line(j).XData(:)]\line(j).YData(:);
-    Slope(5-j) = B(2);
-    Intercept(5-j) = B(1);
-end
+% line = lsline;
+% for j = 1:length(site_abbrevs)
+%     line(j).Color = site_colors(5-j,:);
+%     B = [ones(size(line(j).XData(:))), line(j).XData(:)]\line(j).YData(:);
+%     Slope(5-j) = B(2);
+%     Intercept(5-j) = B(1);
+% end
 hold off
 ylim([-1.5, 1])
-xlabel('max pointing angle (degrees)'); ylabel('snow free median')
+xlabel('Maximum off-pointing angle (degrees)'); ylabel('snow-free median ICESat-2 elevation residual (m)')
+if slope_filter == 2
+    title(['Slopes below ' num2str(slope_threshhold) ' degrees'])
+elseif slope_filter == 1
+    title(['Slopes above ' num2str(slope_threshhold) ' degrees'])
+end
 legend(site_names)
 
 figure(3);
@@ -226,7 +240,7 @@ hold on
 yline(0, 'Linewidth', 1,'Color','black');
 hold off
 %ylim([-0.8, 0.5])
-xlabel('max pointing angle (degrees)'); ylabel('snow free median')
+xlabel('Maximum off-pointing angle (degrees)'); ylabel('snow-free median ICESat-2 elevation residual (m)')
 legend(site_names)
 c = colorbar;
 c.Label.String = 'Average slope (degrees)';
@@ -236,17 +250,23 @@ hold on
 yline(0, 'Linewidth', 1,'Color','black');
 hold off
 %ylim([-0.8, 0.5])
-xlabel('max pointing angle (degrees)'); ylabel('snow free median')
+xlabel('Maximum off-pointing angle (degrees)'); ylabel('snow-free median ICESat-2 elevation residual (m)')
 legend(site_names)
 c = colorbar;
 c.Label.String = 'Standard deviation of slope (degrees)';
 
 figure(5);
 %ylim([-0.8, 0.5])
-ylabel('max pointing angle (degrees)');
+xlabel('Maximum off-pointing angle (degrees)');
 legend(site_names)
-c = colorbar;
-c.Label.String = 'Average slope (degrees)';
+% colormap cool;
+% c = colorbar;
+% c.Label.String = 'Average slope (degrees)';
+
+figure(6);
+%ylim([-0.8, 0.5])
+ylabel('average slope (degrees)');
+legend(site_names)
 
 
 

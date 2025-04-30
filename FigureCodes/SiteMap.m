@@ -20,12 +20,12 @@ addpath(['/Users/karinazikan/Documents/nclCM/nclCM'])
 %Folder path
 folderpath = '/Users/karinazikan/Documents/ICESat2-AlpineSnow/Sites/';
 %site abbreviation for file names
-abbrev = 'Banner';
+abbrev = 'MCS';
 
 % DEM path
-%DTM_name = [folderpath abbrev '/DEMs/MCS_REFDEM_WGS84.tif'];
+DTM_name = [folderpath abbrev '/DEMs/MCS_REFDEM_WGS84.tif'];
 %DTM_name = [folderpath abbrev '/DEMs/RCEW_1m_WGS84UTM11_WGS84.tif'];
-DTM_name = [folderpath abbrev '/DEMs/Banner_Bare_Earth_DEMs_mosaic_UTM11WGS84.tif'];
+%DTM_name = [folderpath abbrev '/DEMs/Banner_Bare_Earth_DEMs_mosaic_UTM11WGS84.tif'];
 %DTM_name = [folderpath abbrev '/DEMs/DryCreekBase1m_WGS84UTM11_DEM.tif'];
 
 % % Veg_map
@@ -148,46 +148,46 @@ set(c2,'visible','off')
 % c.Label.String = 'Elevation residual (m)'; clim([-4 4])
 % title('Snow On')
 
-% %% Residuals gif
-% cmap = cmocean('-balance'); 
-% fig = figure(3); clf
-% ax1 = axes; 
-% imagesc(x,y,DTM); hold on
-% %scatter([df.Easting],[df.Northing],[],'green','.');
-% xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
-% set(gca,'fontsize',20); set(gca,'Ydir','normal');
-% xlabel('Easting [km]'); ylabel('Northing [km]');
-% c1 = colorbar;
-% ax2 = axes;
-% for idx = 1:length(unique_dates)   
-%     df_plot = df(df.time == unique_dates(idx), :);
-%     scatter(df_plot,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
-%     xlabel('Easting [km]'); ylabel('Northing [km]');
-%     set(gca,'fontsize',20); set(gca,'Ydir','normal');
-%     c2 = colorbar; c2.Label.String = 'Elevation residual (m)'; clim([-6 6])
-%     xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
-% 
-%     ax1.Title.String = string(unique_dates(idx),'MMM-yyyy');
-% 
-%     colormap(ax1,[0 0 0; cmocean('grey')])
-%     colormap(ax2,cmap)
-%     ax2.Visible = 'off';
-%     ax2.XTick = [];
-%     ax2.YTick = [];
-%     set(c1,'visible','off')
-% 
-% 
-%     drawnow
-%     frame = getframe(fig);
-%     im{idx} = frame2im(frame);
-%     clear df_plot
-% end
-%%
-% figure;
-% for idx = 1:length(unique_dates)
-%     subplot(8,7,idx)
-%     imshow(im{idx});
-% end
+%% Residuals gif
+cmap = cmocean('-balance'); 
+fig = figure(3); clf
+ax1 = axes; 
+imagesc(x,y,DTM); hold on
+%scatter([df.Easting],[df.Northing],[],'green','.');
+xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
+set(gca,'fontsize',20); set(gca,'Ydir','normal');
+xlabel('Easting [km]'); ylabel('Northing [km]');
+c1 = colorbar;
+ax2 = axes;
+for idx = 1:length(unique_dates)   
+    df_plot = df(df.time == unique_dates(idx), :);
+    scatter(df_plot,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
+    xlabel('Easting [km]'); ylabel('Northing [km]');
+    set(gca,'fontsize',20); set(gca,'Ydir','normal');
+    c2 = colorbar; c2.Label.String = 'Elevation residual (m)'; clim([-6 6])
+    xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
+
+    ax1.Title.String = string(unique_dates(idx),'MMM-yyyy');
+
+    colormap(ax1,[0 0 0; cmocean('grey')])
+    colormap(ax2,cmap)
+    ax2.Visible = 'off';
+    ax2.XTick = [];
+    ax2.YTick = [];
+    set(c1,'visible','off')
+
+
+    drawnow
+    frame = getframe(fig);
+    im{idx} = frame2im(frame);
+    clear df_plot
+end
+%
+figure;
+for idx = 1:length(unique_dates)
+    subplot(8,7,idx)
+    imshow(im{idx});
+end
 % %% export gif
 % filename = ['/Users/karinazikan/Documents/ICESat2-AlpineSnow/FigureCodes/Figures/' abbrev '_ElevResiduals.gif']; % Specify the output file name
 % for idx = 1:length(unique_dates)
@@ -200,42 +200,53 @@ set(c2,'visible','off')
 %             DelayTime=1)
 %     end
 % end
-% %%
-% cmap = cmocean('-balance'); 
-% fig = figure(4); clf
-% ax1 = axes; 
-% imagesc(x,y,DTM); hold on
-% %scatter([df.Easting],[df.Northing],[],'green','.');
-% xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
-% set(gca,'fontsize',20); set(gca,'Ydir','normal');
+%%
+cmap = cmocean('-balance'); 
+fig = figure(4); clf
+ax1 = axes; 
+imagesc(x,y,DTM); hold on
+xlim([603.5 608]); ylim([4863.7 4869.5]); daspect([1 1 1]);
+set(gca,'fontsize',20); set(gca,'Ydir','normal');
+xlabel('Easting [km]'); ylabel('Northing [km]');
+c1 = colorbar; c1.Label.String = 'Elevation (m)';
+
+% HSim = imagesc(x,y,hs,'AlphaData',1); 
+% colormap(ax1,[0 0 0; cmocean('grey')]); daspect([1 1 1]);
 % xlabel('Easting [km]'); ylabel('Northing [km]');
-% c1 = colorbar; c1.Label.String = 'Elevation (m)';
-% ax2 = axes;
-% for idx = 36  
-%     df_plot = df(df.time == unique_dates(idx), :);
-%     scatter(df_plot,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
-%     xlabel('Easting [km]'); ylabel('Northing [km]');
-%     set(gca,'fontsize',20); set(gca,'Ydir','normal');
-%     c2 = colorbar; c2.Label.String = 'Elevation residual (m)'; clim([-6 6])
-%     xlim([min(x) max(x)]); ylim([min(y) max(y)]); daspect([1 1 1]);
-% 
-%     ax1.Title.String = string(unique_dates(idx),'MMMM dd yyyy');
-% 
-%     colormap(ax1,[0 0 0; cmocean('grey')])
-%     colormap(ax2,cmap)
-%     ax2.Visible = 'off';
-%     ax2.XTick = [];
-%     ax2.YTick = [];
-%     set(c2,'visible','off')
-% 
-% 
-%     drawnow
-%     frame = getframe(fig);
-%     im{idx} = frame2im(frame);
-%     clear df_plot
-% end
+% set(gca,'fontsize',20); set(gca,'Ydir','normal');
+% xlim([603.5 608]); ylim([4863.7 4869.5]); daspect([1 1 1]);
+% c1 = colorbar;
+% c1.Label.String = 'Elevation (m)';
 
 
+ax2 = axes;
+for idx = 36 
+    df_plot = df(df.time == unique_dates(idx), :);
+    scatter(df_plot,'Easting','Northing','filled','ColorVariable', 'elev_residuals_vertcoreg_is2_slopecorrected')
+    xlabel('Easting [km]'); ylabel('Northing [km]');
+    set(gca,'fontsize',20); set(gca,'Ydir','normal');
+    c2 = colorbar; c2.Label.String = 'Elevation residual (m)'; clim([-6 6])
+    xlim([603.5 608]); ylim([4863.7 4869.5]); daspect([1 1 1]);
+
+    ax1.Title.String = string(unique_dates(idx),'MMMM dd yyyy');
+
+    colormap(ax1,[0 0 0; cmocean('grey')])
+    colormap(ax2,cmap)
+    ax2.Visible = 'off';
+    ax2.XTick = [];
+    ax2.YTick = [];
+    set(c2,'visible','off')
+    %set(c1,'visible','off')
+
+
+    drawnow
+    frame = getframe(fig);
+    im{idx} = frame2im(frame);
+    clear df_plot
+end
+
+%%link axes
+linkaxes([ax1,ax2])
 
 
 
