@@ -14,7 +14,7 @@
 %%%         slope, across track slope, fitted aspect
 %%%         
 %%%
-%%% Last updated: May 2024 by Karina Zikan
+%%% Last updated: June 2024 by Karina Zikan
 
 
 %% Inputs
@@ -110,13 +110,17 @@ easts = T.Easting(:); % pull out the easting values
 norths = T.Northing(:); % pull out the northings
 footwidth = 11; % approx. width of icesat2 shot footprint in meters
 
+% sort gt in T 
+dates = datetime(T.time.Year,T.time.Month,T.time.Day);
+T.time = dates;
+T = sortrows(T,{'time','gt'});
+
 %% Snow free data
 ix_off = find(T.snowcover == 0);
 
 %identify the ends of each transect and flag them so that neighboring
 %transects aren't used when constructing footprints (use beam variable & date)
-dates = datetime(T.time.Year,T.time.Month,T.time.Day);
-[~,unique_refs] = unique(dates);
+[~,unique_refs] = unique([convertTo(T.time, 'yyyymmdd'), T.gt],'rows');
 end_flag = zeros(size(norths,1),1);
 end_flag(unique_refs) = 1; end_flag(unique_refs(unique_refs~=1)-1) = 1; end_flag(end) = 1;
 

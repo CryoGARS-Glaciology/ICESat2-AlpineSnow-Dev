@@ -27,7 +27,7 @@ abbrev = 'RCEW';
 % 'Agg_acc' - 3
 % 'Agg_dec' - 4
 % 'gradDecent' - 5
-Grouping = 1;
+Grouping = 0;
 
 
 %set footprint length

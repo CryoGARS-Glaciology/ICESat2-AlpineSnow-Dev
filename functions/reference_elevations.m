@@ -16,7 +16,9 @@ function [Rnmad,E] = reference_elevations(icesat2_elevations, norths, easts, end
 %           Rnmad = normalized median absolute difference of
 %               ICESat-2_elevations - elevations
 
-% last modified May 2024 Karina Zikan (karinazikan@u.boisestate.edu)
+% last modified May 2025 Karina Zikan (karinazikan@u.boisestate.edu)
+
+addpath('/Users/karinazikan/Documents/InPoly') % from https://github.com/dengwirda/inpoly
 
 % Set ICESat-2 footwidth
 footwidth = 11; % approx. width of icesat2 shot footprint in meters
@@ -44,20 +46,26 @@ end
 for r=1:length(icesat2_elevations)
 
     %identify the R2erence elevation points in each ICESat2 footprint
-    xv = xc(r,[3:6 3]); % bounding box x vector
-    yv = yc(r,[3:6 3]); % bounding box y vector
+    xv = xc(r,[3:6]); %3]); % bounding box x vector
+    yv = yc(r,[3:6]); %3]); % bounding box y vector
 
-    % subset giant grid
-    ix = find(x <= (easts(r)+60) & x >= (easts(r)-60)); % x index for subgrid
-    iy = find(y <= (norths(r)+60) & y >= (norths(r)-60)); % y index for subgrid
-    xsubgrid = xgrid(iy,ix);
-    ysubgrid = ygrid(iy,ix);
-    subelevations = elevations(iy,ix);
-    subslope = slope(iy,ix);
-    subaspect = aspect(iy,ix);
+    % % subset giant grid
+    % ix = find(x <= (easts(r)+(default_length./2 + 10)) & x >= (easts(r)-(default_length./2 + 10))); % x index for subgrid
+    % iy = find(y <= (norths(r)+(default_length./2 + 10)) & y >= (norths(r)-(default_length./2 + 10))); % y index for subgrid
+    % xsubgrid = xgrid(iy,ix);
+    xsubgrid = xgrid(:);
+    % ysubgrid = ygrid(iy,ix);
+    ysubgrid = ygrid(:);
+    % subelevations = elevations(iy,ix);
+    subelevations = elevations(:);
+    % subslope = slope(iy,ix);
+    subslope = slope(:);
+    % subaspect = aspect(iy,ix);
+    subaspect = aspect(:);
 
    %data in the footprint
-    in = inpolygon(xsubgrid, ysubgrid, xv, yv); % get logical array of in values
+    in = inpoly2([xsubgrid, ysubgrid], [xv', yv']); % get logical array of in values
+
     pointsinx = xsubgrid(in); % save x locations
     pointsiny = ysubgrid(in); % save y locations
     elevationsin = subelevations(in); % save elevations

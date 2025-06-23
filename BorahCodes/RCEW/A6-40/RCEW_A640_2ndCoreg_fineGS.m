@@ -48,8 +48,8 @@ acronym = 'A6-40'; %for custom ATL06 with ATL08 classification set to A6-20 for 
 filename_sufix = 'A6-40-ref-elevations-grid-search-fineGS-agg';
 
 % Corse Grid search offset (from corse coregistration)
-Arow = 1;
-Acol = 2;
+Arow = 0;
+Acol = 1;
 
 %% Set output name
 outputname = [abbrev,'-ICESat2-', filename_sufix, '.csv'];

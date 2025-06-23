@@ -20,7 +20,7 @@ load('/Users/karinazikan/Documents/ScientificColourMaps8/vik/DiscretePalettes/vi
 folderpath = '/Users/karinazikan/Documents/ICESat2-AlpineSnow/Sites/';
 %site abbreviation for file names
 site_abbrevs = string({'RCEW';'Banner';'MCS';'DCEW'});
-site_names = string({'RCEW';'BCS';'MCS';'DCEW'});
+site_names = string({'Reynolds Creek';'Banner Summit';'Mores Creek';'Dry Creek'});
 Coreg_type = string({'noCoreg';'Agg';'ByTrack'});
 
 %Turn dtm or is2 slope correction
@@ -58,7 +58,7 @@ for j = 1:length(site_names)
     filepath = strcat(folderpath, 'IS2_Data/', prod_abbrev, '/', abbrev, '_', prod_abbrev, '-ByTrack-fineGS-Ashift.csv');
     Ashift_ByTrack = readtable(filepath);
 
-    Ashift_Agg = {[0.3,1.1];[0.7,-0.9];[0.8,-0.1];[0.3,-0.1]}; % agg shifts for {'RCEW';'Banner';'MCS';'DCEW'}
+    Ashift_Agg = {[0.3,0.1];[0.7,-0.9];[0.8,-0.1];[0.3,-0.1]}; % agg shifts for {'RCEW';'Banner';'MCS';'DCEW'}
 
     a = table2array(Ashift_ByTrack(:,3));
     a = -1 * a;

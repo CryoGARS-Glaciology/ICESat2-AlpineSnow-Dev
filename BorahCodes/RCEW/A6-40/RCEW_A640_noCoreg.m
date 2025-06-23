@@ -1,5 +1,4 @@
-%%% Code for 10 cm step grid search after corse grid search corregistration
- %%% SPECIFIED INPUTS:
+%% SPECIFIED INPUTS:
 %%%     DTM_path = path to the reference DTM on your computer
 %%%     DTM_name = DTM file name
 %%%     DTM_slope = Slope map file name
@@ -11,20 +10,17 @@
 %%% OUTPUTS:
 %%%     Reference_Elevations = csv datatable reporting the non-weighted
 %%%         mean, std, weighted mean, and fitted refference elevations,
-%%%         mean slope, std slope, mean aspect, std aspect, along track
-%%%         slope, across track slope, fitted aspect
-%%%         
+%%%         mean slope, std slope, mean aspect, std aspect
 %%%
-%%% Last updated: Dec 2024 by Karina Zikan
-
+%%%
+%%% Last updated: Jan 2025 by Karina Zikan
 
 %% Inputs
 clearvars; close all;
-addpath('./functions')
+addpath('/bsuhome/karinazikan/scratch/') % path to location of reference_elevations & ICESat2_FootprintCorners functions
 
 %DTM (be sure the path ends in a /)
-DTM_path = 'Sites/RCEW/DEMs/';
-
+DTM_path = '/bsuhome/karinazikan/scratch/RCEW/'; %path to dtm, slope, & aspect maps
 DTM_name = 'RCEW_1m_WGS84UTM11_WGS84.tif';
 if contains(DTM_name,'.tif')
     DTM_date = '20120826'; %only need to change this if the DTM is a geotiff
@@ -34,25 +30,24 @@ DTM_slope = 'RCEW_1m_WGS84UTM11_WGS84-slope.tif';
 % Aspect
 DTM_aspect = 'RCEW_1m_WGS84UTM11_WGS84-aspect.tif';
 
-
-%ICESat-2 csv (be sure the path ends in a /)
-csv_path = '/Users/karinazikan/Documents/ICESat2-AlpineSnow/Sites/RCEW/IS2_Data/A6-40/';
+%csv (be sure the path ends in a /)
+csv_path = '/bsuhome/karinazikan/scratch/RCEW/A6-40/'; %Path to ICESat-2 data with snow cover classification
 csv_name = 'RCEW-ICESat2-A6-40-SnowCover.csv';
 
 %site abbreviation for file names
 abbrev = 'RCEW';
 
 %ICESat-2 product acronym
-acronym = 'ATL06'; %set to ATL06-20 for the 20m atl06 data
+acronym = 'A6-40'; %for custom ATL06 with ATL08 classification set to A6-20 for 20m, A6-40 for 40m, 'A6-30' for 30m
 
 %Set output name - MAKE SURE FILENAME SUFIX IS CORRECT!!!!!!!!!!!!!!!!!!!
-    % file name formats: '-ref-elevations-grid-grad-decent' 
-    % '-atl08class-ref-elevations-grid-grad-decent' 
-    % '-20m-ref-elevations-grid-grad-decent' 
-    % '-atl08class-20m-ref-elevations-grid-grad-decent' 
-filename_sufix = 'A6-40-ref-elevations-grid-search-fineGS-agg';
+% file name formats: '-ref-elevations-grid-grad-decent'
+%                    '-atl08class-ref-elevations-grid-grad-decent'
+%                    '-20m-ref-elevations-grid-grad-decent'
+%                    '-atl08class-20m-ref-elevations-grid-grad-decent'
+filename_sufix = 'A6-40-ref-elevations-noCoreg';
 
-% Corse Grid search offset (from corse coregistration)
+% no trasform for no coregistration
 Arow = 0;
 Acol = 0;
 
@@ -65,11 +60,16 @@ if acronym == 'ATL08'
     default_length = 100;
 elseif acronym == 'ATL06'
     default_length = 40;
+elseif acronym == 'A6-40'
+    default_length = 40;
 elseif acronym == 'A6-20'
     default_length = 20;
+elseif acronym == 'A6-30'
+    default_length = 30;
 else
-    error('acronym must be ATL06 or A6-20 or ATL08')
+    error('acronym must be ATL06 or or A6-40 or A6-20 or ATL08')
 end
+footwidth = 11; 
 
 
 %days of year
@@ -125,54 +125,8 @@ dates = datetime(T.time.Year,T.time.Month,T.time.Day);
 end_flag = zeros(size(norths,1),1);
 end_flag(unique_refs) = 1; end_flag(unique_refs(unique_refs~=1)-1) = 1; end_flag(end) = 1;
 
-dates_off = dates(ix_off,:);
-[~,unique_refs] = unique(dates_off);
-end_flag_off = zeros(size(norths(ix_off,:),1),1);
-end_flag_off(unique_refs) = 1; end_flag_off(unique_refs(unique_refs~=1)-1) = 1; end_flag_off(end) = 1;
-
-%reference elevation function to optimise 
-GradDecentFunc = @(A)reference_elevations(zmod(ix_off,:), norths(ix_off,:), easts(ix_off,:), end_flag_off, default_length, elevations, slope, aspect, Ref, A); %create the handle to call the coregistration function
-
-%% Grid of possible inputs to calculate initial guess
-A1 = -0.9:0.1:0.9;
-
-tic
-for i = 1:length(A1)
-    tic
-    for j = 1:length(A1)
-        rmad_grid(i,j) = GradDecentFunc([Arow+A1(i),Acol+A1(j)]);
-    end    
-    fprintf('col %5.2f completed',j);
-    writematrix(rmad_grid,[abbrev,'_rmadGrid.csv'])
-    toc
-end
-toc
-
-
-figure(2);
-im = imagesc(rmad_grid); 
-xticks(1:length(A1)); yticks(1:length(A1)); 
-xticklabels(A1); yticklabels(A1); 
-colorbar;
-waitfor(im); %close the figure to advance
-
-[row, col] = find(ismember(rmad_grid, min(rmad_grid(:))));
-A1row = A1(row); A1col = A1(col);
-
-writematrix([Arow+A1row,Acol+A1col],[abbrev,'_Ashift.csv'])
-
-% Test Gradient Decent from grid guess
- tic
- % GradDecentFunc = @(A)reference_elevations(zmod(ix_off,:), norths(ix_off,:), easts(ix_off,:), end_flag_off, default_length, elevations, slope, aspect, Ref, A); %create the handle to call the coregistration function
- % [Agrid_best,RMADgrid_best] = fminsearch(GradDecentFunc,[Arow,Acol],optimset('PlotFcns',@optimplotfval)); %initial horizontal offset estimate = [0,0] = [0 m East, 0 m North]
- fprintf('x-offset = %5.2f m & y-offset = %5.2f m w/ RNMAD = %5.2f m \n',Arow+A1row,Acol+A1col,min(rmad_grid(:)));
- fprintf('Old RNMAD = %5.2f', rmad_grid(6,6));
- toc
-
 %% Calculate corregistered reference elevations
-[~,E] = reference_elevations(zmod, norths, easts, end_flag, default_length, elevations, slope, aspect, Ref, [Arow+A1row,Acol+A1col]); %calculate ref elevations with the shift
+[~,E] = reference_elevations(zmod, norths, easts, end_flag, default_length, elevations, slope, aspect, Ref, [Arow,Acol]); %calculate ref elevations 
     
 %% save ref elevation csv
 writetable(E,outputname);
-
-
